@@ -147,27 +147,17 @@ struct Index {
   }
 
   @Builder SwipeStart(a: OtpAccount) {
-    Stack() {
-      SymbolGlyph($r('sys.symbol.square_and_pencil'))
-        .fontSize(20)
-        .fontColor([$r('app.color.accent_blue')])
-    }
-    .width(48).height(48).borderRadius(24)
-    .backgroundColor($r('app.color.bg_card'))
-    .margin({ left: 8, right: 16, top: 8, bottom: 8 })
-    .onClick(() => this.edit(a))
+    Image($r('app.media.swipe_edit'))
+      .width(40).height(40)
+      .margin({ left: 8, right: 16 })
+      .onClick(() => this.edit(a))
   }
 
   @Builder SwipeEnd(a: OtpAccount) {
-    Stack() {
-      SymbolGlyph($r('sys.symbol.trash'))
-        .fontSize(20)
-        .fontColor([Color.White])
-    }
-    .width(48).height(48).borderRadius(24)
-    .backgroundColor($r('app.color.accent_red'))
-    .margin({ left: 16, right: 8, top: 8, bottom: 8 })
-    .onClick(() => this.askDelete(a))
+    Image($r('app.media.swipe_delete'))
+      .width(40).height(40)
+      .margin({ left: 16, right: 8 })
+      .onClick(() => this.askDelete(a))
   }
 
   build() {
@@ -218,10 +208,8 @@ struct Index {
           })
             .margin({ bottom: 8, right: 16 })
         }
-        Button('+')
-          .width(56).height(56).borderRadius(28)
-          .backgroundColor($r('app.color.accent_blue'))
-          .fontColor(Color.White).fontSize(28)
+        Image($r('app.media.fab_add'))
+          .width(56).height(56)
           .onClick(() => { this.plusOpen = !this.plusOpen; })
       }
       .position({ right: 16, bottom: 32 })

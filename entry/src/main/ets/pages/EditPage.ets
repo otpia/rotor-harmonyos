@@ -79,66 +79,92 @@ struct EditPage {
     }
   }
 
+  @Builder NavButton(icon: Resource, onTap: () => void) {
+    Stack() {
+      Image(icon).width(24).height(24)
+    }
+    .width(40).height(40)
+    .borderRadius(20)
+    .backgroundColor($r('app.color.bg_button'))
+    .onClick(onTap)
+  }
+
   @Builder Field(label: Resource, value: string, onChange: (v: string) => void) {
     Row() {
-      Text(label).fontSize(14).fontColor($r('app.color.text_secondary')).width(56)
+      Text(label).fontSize(16).fontColor($r('app.color.text_primary')).width(60)
       TextInput({ text: value })
+        .fontSize(16)
         .fontColor($r('app.color.text_primary'))
         .placeholderColor($r('app.color.text_placeholder'))
         .backgroundColor(Color.Transparent)
         .layoutWeight(1)
         .onChange(onChange)
     }
-    .padding({ top: 12, bottom: 12, left: 16, right: 16 })
+    .height(50)
+    .padding({ left: 24, right: 24 })
     .alignItems(VerticalAlign.Center)
   }
 
   build() {
-    Column() {
+    Stack() {
+      Column() {
       Row() {
-        Text('×').fontSize(24).fontColor($r('app.color.text_primary'))
-          .onClick(() => this.getUIContext().getRouter().back())
+        this.NavButton($r('app.media.nav_close'), () => this.getUIContext().getRouter().back())
         Text(this.isEdit ? $r('app.string.edit_title') : $r('app.string.add_title'))
-          .fontSize(18).margin({ left: 12 }).layoutWeight(1)
+          .fontSize(20)
+          .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.text_primary'))
-        Text('✓').fontSize(22)
-          .fontColor(this.valid() ? $r('app.color.accent_blue') : $r('app.color.text_placeholder'))
-          .onClick(() => this.save())
-      }.padding(16).width('100%')
+          .margin({ left: 8 })
+          .layoutWeight(1)
+        this.NavButton($r('app.media.nav_check'), () => this.save())
+      }
+      .height(56)
+      .width('100%')
+      .padding({ left: 16, right: 16 })
+      .alignItems(VerticalAlign.Center)
+      .margin({ top: 44 })
 
       Column() {
-        Image($r('app.media.icon_default')).width(64).height(64).borderRadius(32).margin({ top: 24, bottom: 24 })
+        Image($r('app.media.edit_avatar')).width(80).height(80)
       }
+      .margin({ top: 24, bottom: 32 })
 
       Column() {
         this.Field($r('app.string.label_name'), this.account.name, (v: string) => { this.account.name = v; })
-        Divider().color($r('app.color.divider'))
         this.Field($r('app.string.label_note'), this.account.note, (v: string) => { this.account.note = v; })
       }
+      .padding({ top: 4, bottom: 4 })
       .backgroundColor($r('app.color.bg_card'))
       .borderRadius(16)
-      .margin({ left: 16, right: 16, bottom: 12 })
+      .margin({ left: 8, right: 8, bottom: 8 })
 
       Column() {
         this.Field($r('app.string.label_secret'), this.secret, (v: string) => { this.secret = v; })
       }
+      .padding({ top: 4, bottom: 4 })
       .backgroundColor($r('app.color.bg_card'))
       .borderRadius(16)
-      .margin({ left: 16, right: 16, bottom: 12 })
+      .margin({ left: 8, right: 8, bottom: 8 })
 
       Column() {
         Row() {
-          Text($r('app.string.label_type')).fontSize(14).fontColor($r('app.color.text_secondary')).width(56)
+          Text($r('app.string.label_type')).fontSize(16).fontColor($r('app.color.text_primary')).width(60)
           Text(this.account.type === OtpType.TOTP ? $r('app.string.type_totp') : $r('app.string.type_hotp'))
-            .fontColor($r('app.color.text_placeholder')).layoutWeight(1).textAlign(TextAlign.End)
-          Text('›').fontColor($r('app.color.text_placeholder')).margin({ left: 8 })
+            .fontSize(16)
+            .fontColor($r('app.color.text_secondary'))
+            .layoutWeight(1)
+            .textAlign(TextAlign.End)
+          Image($r('app.media.chevron_right')).width(24).height(24).margin({ left: 8 })
         }
-        .padding({ top: 12, bottom: 12, left: 16, right: 16 })
+        .height(50)
+        .padding({ left: 24, right: 24 })
         .onClick(() => this.typeDialog.open())
       }
+      .padding({ top: 4, bottom: 4 })
       .backgroundColor($r('app.color.bg_card'))
       .borderRadius(16)
-      .margin({ left: 16, right: 16 })
+      .margin({ left: 8, right: 8 })
+      }.width('100%').height('100%')
     }
     .width('100%').height('100%')
     .backgroundColor($r('app.color.bg_app'))
