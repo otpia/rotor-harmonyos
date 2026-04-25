@@ -2,14 +2,19 @@ import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 
 // 计算 HMAC，algo 取值 SHA1/SHA256/SHA512
 export async function hmac(algo: string, key: Uint8Array, message: Uint8Array): Promise<Uint8Array> {
-  const mac = cryptoFramework.createMac(`HMAC|${algo}`);
-  const symKeyGen = cryptoFramework.createSymKeyGenerator(`HMAC|${algo}`);
-  const keyBlob: cryptoFramework.DataBlob = { data: key };
-  const symKey = await symKeyGen.convertKey(keyBlob);
-  await mac.init(symKey);
-  await mac.update({ data: message } as cryptoFramework.DataBlob);
-  const result = await mac.doFinal();
-  return new Uint8Array(result.data);
+  try {
+    const mac = cryptoFramework.createMac(`HMAC|${algo}`);
+    const symKeyGen = cryptoFramework.createSymKeyGenerator(`HMAC|${algo}`);
+    const keyBlob: cryptoFramework.DataBlob = { data: key };
+    const symKey = await symKeyGen.convertKey(keyBlob);
+    await mac.init(symKey);
+    await mac.update({ data: message } as cryptoFramework.DataBlob);
+    const result = await mac.doFinal();
+    return new Uint8Array(result.data);
+  } catch (e) {
+    console.error('[HmacSha1.hmac]', e);
+    throw new Error('hmac failed');
+  }
 }
 
 // 把 64 位整数（毫秒级 / 计数器）编码为 8 字节大端

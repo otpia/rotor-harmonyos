@@ -53,35 +53,39 @@ struct Index {
   }
 
   private async refresh(): Promise<void> {
-    const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
-    this.accounts = await OtpAccountStore.listAll(ctx);
-    for (const a of this.accounts) {
-      if (!this.secrets[a.id]) {
-        try {
+    try {
+      const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      this.accounts = await OtpAccountStore.listAll(ctx);
+      for (const a of this.accounts) {
+        if (!this.secrets[a.id]) {
           this.secrets[a.id] = await SecretVault.get(a.id);
-        } catch (_e) {
-          this.secrets[a.id] = '';
         }
       }
+      await this.tick(Date.now());
+    } catch (e) {
+      console.error('[Index.refresh]', e);
     }
-    await this.tick(Date.now());
   }
 
   private async tick(now: number): Promise<void> {
-    const next: Record<string, CodeState> = {};
-    for (const a of this.accounts) {
-      const remaining = remainingSeconds(now, a.period);
-      const prev = this.codes[a.id];
-      let code = prev ? prev.code : '------';
-      const sec = this.secrets[a.id];
-      if (sec && (!prev || remaining === a.period || prev.code === '------')) {
-        try {
-          code = await totp(sec, now, a.period, a.digits, a.algorithm);
-        } catch (_e) { code = '------'; }
+    try {
+      const next: Record<string, CodeState> = {};
+      for (const a of this.accounts) {
+        const remaining = remainingSeconds(now, a.period);
+        const prev = this.codes[a.id];
+        let code = prev ? prev.code : '------';
+        const sec = this.secrets[a.id];
+        if (sec && (!prev || remaining === a.period || prev.code === '------')) {
+          try {
+            code = await totp(sec, now, a.period, a.digits, a.algorithm);
+          } catch (_e) { code = '------'; }
+        }
+        next[a.id] = { code, remaining };
       }
-      next[a.id] = { code, remaining };
+      this.codes = next;
+    } catch (e) {
+      console.error('[Index.tick]', e);
     }
-    this.codes = next;
   }
 
   private filtered(): OtpAccount[] {
@@ -92,13 +96,17 @@ struct Index {
   }
 
   private async copy(a: OtpAccount): Promise<void> {
-    const c = this.codes[a.id];
-    if (!c) return;
-    const data = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, c.code);
-    await pasteboard.getSystemPasteboard().setData(data);
-    this.activeId = a.id;
-    this.toastVisible = true;
-    setTimeout(() => { this.toastVisible = false; }, 1500);
+    try {
+      const c = this.codes[a.id];
+      if (!c) return;
+      const data = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, c.code);
+      await pasteboard.getSystemPasteboard().setData(data);
+      this.activeId = a.id;
+      this.toastVisible = true;
+      setTimeout(() => { this.toastVisible = false; }, 1500);
+    } catch (e) {
+      console.error('[Index.copy]', e);
+    }
   }
 
   private askDelete(a: OtpAccount): void {
@@ -116,18 +124,26 @@ struct Index {
   }
 
   private async confirmDelete(): Promise<void> {
-    if (!this.pendingDeleteId) return;
-    const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
-    const id = this.pendingDeleteId;
-    await SecretVault.remove(id);
-    await OtpAccountStore.delete(ctx, id);
-    this.pendingDeleteId = '';
-    this.pendingDeleteName = '';
-    this.refresh();
+    try {
+      if (!this.pendingDeleteId) return;
+      const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      const id = this.pendingDeleteId;
+      await SecretVault.remove(id);
+      await OtpAccountStore.delete(ctx, id);
+      this.pendingDeleteId = '';
+      this.pendingDeleteName = '';
+      this.refresh();
+    } catch (e) {
+      console.error('[Index.confirmDelete]', e);
+    }
   }
 
   private edit(a: OtpAccount): void {
-    this.getUIContext().getRouter().pushUrl({ url: 'pages/EditPage', params: { id: a.id, prefilled: a } });
+    try {
+      this.getUIContext().getRouter().pushUrl({ url: 'pages/EditPage', params: { id: a.id, prefilled: a } });
+    } catch (e) {
+      console.error('[Index.edit]', e);
+    }
   }
 
   @Builder SwipeStart(a: OtpAccount) {

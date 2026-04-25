@@ -49,26 +49,34 @@ struct EditPage {
   }
 
   private async save(): Promise<void> {
-    if (!this.valid()) {
-      const msg = !this.account.name ? '请填写名称' : '秘钥格式不正确';
-      this.getUIContext().getPromptAction().showToast({ message: msg });
-      return;
+    try {
+      if (!this.valid()) {
+        const msg = !this.account.name ? '请填写名称' : '秘钥格式不正确';
+        try {
+          this.getUIContext().getPromptAction().showToast({ message: msg });
+        } catch (e) {
+          console.error('[EditPage.save] showToast failed', e);
+        }
+        return;
+      }
+      const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      const now = Date.now();
+      if (!this.isEdit) {
+        this.account.id = util.generateRandomUUID(false);
+        this.account.createdAt = now;
+        this.account.orderIndex = (await OtpAccountStore.maxOrderIndex(ctx)) + 1;
+      }
+      this.account.updatedAt = now;
+      await SecretVault.put(this.account.id, base32Normalize(this.secret));
+      if (this.isEdit) {
+        await OtpAccountStore.update(ctx, this.account);
+      } else {
+        await OtpAccountStore.insert(ctx, this.account);
+      }
+      this.getUIContext().getRouter().back();
+    } catch (e) {
+      console.error('[EditPage.save]', e);
     }
-    const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
-    const now = Date.now();
-    if (!this.isEdit) {
-      this.account.id = util.generateRandomUUID(false);
-      this.account.createdAt = now;
-      this.account.orderIndex = (await OtpAccountStore.maxOrderIndex(ctx)) + 1;
-    }
-    this.account.updatedAt = now;
-    await SecretVault.put(this.account.id, base32Normalize(this.secret));
-    if (this.isEdit) {
-      await OtpAccountStore.update(ctx, this.account);
-    } else {
-      await OtpAccountStore.insert(ctx, this.account);
-    }
-    this.getUIContext().getRouter().back();
   }
 
   @Builder Field(label: Resource, value: string, onChange: (v: string) => void) {

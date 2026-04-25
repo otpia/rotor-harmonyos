@@ -8,18 +8,23 @@ export async function totp(
   digits: number,
   algorithm: 'SHA1' | 'SHA256' | 'SHA512'
 ): Promise<string> {
-  const t = Math.floor(nowMs / 1000 / period);
-  const msg = uint64ToBytesBE(t);
-  const key = base32Decode(secretBase32);
-  const mac = await hmac(algorithm, key, msg);
-  const offset = mac[mac.length - 1] & 0x0f;
-  const bin = ((mac[offset] & 0x7f) << 24) |
-              ((mac[offset + 1] & 0xff) << 16) |
-              ((mac[offset + 2] & 0xff) << 8) |
-              (mac[offset + 3] & 0xff);
-  const mod = Math.pow(10, digits);
-  const code = (bin % mod).toString().padStart(digits, '0');
-  return code;
+  try {
+    const t = Math.floor(nowMs / 1000 / period);
+    const msg = uint64ToBytesBE(t);
+    const key = base32Decode(secretBase32);
+    const mac = await hmac(algorithm, key, msg);
+    const offset = mac[mac.length - 1] & 0x0f;
+    const bin = ((mac[offset] & 0x7f) << 24) |
+                ((mac[offset + 1] & 0xff) << 16) |
+                ((mac[offset + 2] & 0xff) << 8) |
+                (mac[offset + 3] & 0xff);
+    const mod = Math.pow(10, digits);
+    const code = (bin % mod).toString().padStart(digits, '0');
+    return code;
+  } catch (e) {
+    console.error('[OtpEngine.totp]', e);
+    throw new Error(String(e));
+  }
 }
 
 export async function hotp(
@@ -28,16 +33,21 @@ export async function hotp(
   digits: number,
   algorithm: 'SHA1' | 'SHA256' | 'SHA512'
 ): Promise<string> {
-  const msg = uint64ToBytesBE(counter);
-  const key = base32Decode(secretBase32);
-  const mac = await hmac(algorithm, key, msg);
-  const offset = mac[mac.length - 1] & 0x0f;
-  const bin = ((mac[offset] & 0x7f) << 24) |
-              ((mac[offset + 1] & 0xff) << 16) |
-              ((mac[offset + 2] & 0xff) << 8) |
-              (mac[offset + 3] & 0xff);
-  const mod = Math.pow(10, digits);
-  return (bin % mod).toString().padStart(digits, '0');
+  try {
+    const msg = uint64ToBytesBE(counter);
+    const key = base32Decode(secretBase32);
+    const mac = await hmac(algorithm, key, msg);
+    const offset = mac[mac.length - 1] & 0x0f;
+    const bin = ((mac[offset] & 0x7f) << 24) |
+                ((mac[offset + 1] & 0xff) << 16) |
+                ((mac[offset + 2] & 0xff) << 8) |
+                (mac[offset + 3] & 0xff);
+    const mod = Math.pow(10, digits);
+    return (bin % mod).toString().padStart(digits, '0');
+  } catch (e) {
+    console.error('[OtpEngine.hotp]', e);
+    throw new Error(String(e));
+  }
 }
 
 export function formatGroups(code: string): string {
