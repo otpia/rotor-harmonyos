@@ -1,4 +1,3 @@
-import { router, promptAction } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS';
 import { OtpAccount, OtpType, defaultAccount } from '../model/OtpAccount';
@@ -30,7 +29,7 @@ struct EditPage {
   });
 
   aboutToAppear(): void {
-    const params = router.getParams() as EditParams;
+    const params = this.getUIContext().getRouter().getParams() as EditParams;
     if (params && params.id) {
       this.isEdit = true;
       if (params.prefilled) {
@@ -52,10 +51,10 @@ struct EditPage {
   private async save(): Promise<void> {
     if (!this.valid()) {
       const msg = !this.account.name ? '请填写名称' : '秘钥格式不正确';
-      promptAction.showToast({ message: msg });
+      this.getUIContext().getPromptAction().showToast({ message: msg });
       return;
     }
-    const ctx = getContext(this) as common.UIAbilityContext;
+    const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
     const now = Date.now();
     if (!this.isEdit) {
       this.account.id = util.generateRandomUUID(false);
@@ -69,7 +68,7 @@ struct EditPage {
     } else {
       await OtpAccountStore.insert(ctx, this.account);
     }
-    router.back();
+    this.getUIContext().getRouter().back();
   }
 
   @Builder Field(label: Resource, value: string, onChange: (v: string) => void) {
@@ -90,7 +89,7 @@ struct EditPage {
     Column() {
       Row() {
         Text('×').fontSize(24).fontColor($r('app.color.text_primary'))
-          .onClick(() => router.back())
+          .onClick(() => this.getUIContext().getRouter().back())
         Text(this.isEdit ? $r('app.string.edit_title') : $r('app.string.add_title'))
           .fontSize(18).margin({ left: 12 }).layoutWeight(1)
           .fontColor($r('app.color.text_primary'))

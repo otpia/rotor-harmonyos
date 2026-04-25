@@ -1,4 +1,3 @@
-import { router } from '@kit.ArkUI';
 import { pasteboard } from '@kit.BasicServicesKit';
 import { common } from '@kit.AbilityKit';
 import { OtpAccount } from '../model/OtpAccount';
@@ -54,7 +53,7 @@ struct Index {
   }
 
   private async refresh(): Promise<void> {
-    const ctx = getContext(this) as common.UIAbilityContext;
+    const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
     this.accounts = await OtpAccountStore.listAll(ctx);
     for (const a of this.accounts) {
       if (!this.secrets[a.id]) {
@@ -118,7 +117,7 @@ struct Index {
 
   private async confirmDelete(): Promise<void> {
     if (!this.pendingDeleteId) return;
-    const ctx = getContext(this) as common.UIAbilityContext;
+    const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
     const id = this.pendingDeleteId;
     await SecretVault.remove(id);
     await OtpAccountStore.delete(ctx, id);
@@ -128,7 +127,7 @@ struct Index {
   }
 
   private edit(a: OtpAccount): void {
-    router.pushUrl({ url: 'pages/EditPage', params: { id: a.id, prefilled: a } });
+    this.getUIContext().getRouter().pushUrl({ url: 'pages/EditPage', params: { id: a.id, prefilled: a } });
   }
 
   @Builder SwipeStart(a: OtpAccount) {
@@ -189,11 +188,11 @@ struct Index {
           PlusMenuPopup({
             onInputSecret: () => {
               this.plusOpen = false;
-              router.pushUrl({ url: 'pages/EditPage' });
+              this.getUIContext().getRouter().pushUrl({ url: 'pages/EditPage' });
             },
             onScanQr: () => {
               this.plusOpen = false;
-              router.pushUrl({ url: 'pages/ScanPage' });
+              this.getUIContext().getRouter().pushUrl({ url: 'pages/ScanPage' });
             }
           })
             .margin({ bottom: 8, right: 16 })

@@ -1,4 +1,3 @@
-import { router, promptAction } from '@kit.ArkUI';
 import { scanCore, scanBarcode } from '@kit.ScanKit';
 import { abilityAccessCtrl, common, PermissionRequestResult, Permissions } from '@kit.AbilityKit';
 import { parseOtpAuth, ParsedOtpAuth } from '../utils/OtpAuthUri';
@@ -11,15 +10,15 @@ struct ScanPage {
   }
 
   private async requestAndScan(): Promise<void> {
-    const ctx = getContext(this) as common.UIAbilityContext;
+    const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
     const atManager = abilityAccessCtrl.createAtManager();
     const perms: Permissions[] = ['ohos.permission.CAMERA'];
     try {
       const r: PermissionRequestResult = await atManager.requestPermissionsFromUser(ctx, perms);
       const granted = r.authResults && r.authResults[0] === 0;
       if (!granted) {
-        promptAction.showToast({ message: '需要相机权限' });
-        router.back();
+        this.getUIContext().getPromptAction().showToast({ message: '需要相机权限' });
+        this.getUIContext().getRouter().back();
         return;
       }
       const opts: scanBarcode.ScanOptions = {
@@ -31,16 +30,16 @@ struct ScanPage {
       const text = result.originalValue || '';
       try {
         const parsed: ParsedOtpAuth = parseOtpAuth(text);
-        router.replaceUrl({
+        this.getUIContext().getRouter().replaceUrl({
           url: 'pages/EditPage',
           params: { prefilled: parsed.account, prefilledSecret: parsed.secret }
         });
       } catch (_e) {
-        promptAction.showToast({ message: '未识别的二维码' });
-        router.back();
+        this.getUIContext().getPromptAction().showToast({ message: '未识别的二维码' });
+        this.getUIContext().getRouter().back();
       }
     } catch (_e) {
-      router.back();
+      this.getUIContext().getRouter().back();
     }
   }
 
