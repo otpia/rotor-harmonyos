@@ -3,8 +3,8 @@ import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 // 计算 HMAC，algo 取值 SHA1/SHA256/SHA512
 export async function hmac(algo: string, key: Uint8Array, message: Uint8Array): Promise<Uint8Array> {
   try {
-    const mac = cryptoFramework.createMac(`HMAC|${algo}`);
-    const symKeyGen = cryptoFramework.createSymKeyGenerator(`HMAC|${algo}`);
+    const mac = cryptoFramework.createMac(algo);
+    const symKeyGen = cryptoFramework.createSymKeyGenerator('HMAC');
     const keyBlob: cryptoFramework.DataBlob = { data: key };
     const symKey = await symKeyGen.convertKey(keyBlob);
     await mac.init(symKey);

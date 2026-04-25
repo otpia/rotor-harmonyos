@@ -48,5 +48,6 @@ struct ScanPage {
       Text('正在打开相机…').fontColor($r('app.color.text_primary'))
     }.width('100%').height('100%').justifyContent(FlexAlign.Center)
     .backgroundColor($r('app.color.bg_app'))
+    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
   }
 }

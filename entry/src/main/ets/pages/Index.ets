@@ -149,21 +149,33 @@ struct Index {
   @Builder SwipeStart(a: OtpAccount) {
     Row() {
       Stack() {
-        Text('✎').fontSize(18).fontColor($r('app.color.accent_blue'))
+        SymbolGlyph($r('sys.symbol.square_and_pencil'))
+          .fontSize(20)
+          .fontColor([$r('app.color.accent_blue')])
       }
       .backgroundColor($r('app.color.bg_card'))
-      .width(56).height('80%').borderRadius(28)
+      .width(48).height(48).borderRadius(24)
       .onClick(() => this.edit(a))
     }
+    .height('100%')
+    .alignItems(VerticalAlign.Center)
+    .padding({ left: 8, right: 16 })
   }
 
   @Builder SwipeEnd(a: OtpAccount) {
     Row() {
-      Text('🗑').fontSize(20).fontColor(Color.White)
+      Stack() {
+        SymbolGlyph($r('sys.symbol.trash'))
+          .fontSize(20)
+          .fontColor([Color.White])
+      }
+      .backgroundColor($r('app.color.accent_red'))
+      .width(48).height(48).borderRadius(24)
+      .onClick(() => this.askDelete(a))
     }
-    .backgroundColor($r('app.color.accent_red'))
-    .width(56).height('80%').borderRadius(28).justifyContent(FlexAlign.Center)
-    .onClick(() => this.askDelete(a))
+    .height('100%')
+    .alignItems(VerticalAlign.Center)
+    .padding({ left: 16, right: 8 })
   }
 
   build() {
@@ -219,15 +231,17 @@ struct Index {
           .fontColor(Color.White).fontSize(28)
           .onClick(() => { this.plusOpen = !this.plusOpen; })
       }
-      .position({ right: 16, bottom: 16 })
+      .position({ right: 16, bottom: 32 })
       .alignItems(HorizontalAlign.End)
 
       if (this.toastVisible) {
         Column() {
           CopyToast({ visible: this.toastVisible })
-        }.position({ bottom: 100 }).width('100%').alignItems(HorizontalAlign.Center)
+        }.position({ bottom: 120 }).width('100%').alignItems(HorizontalAlign.Center)
       }
     }
     .width('100%').height('100%')
+    .backgroundColor($r('app.color.bg_app'))
+    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
   }
 }

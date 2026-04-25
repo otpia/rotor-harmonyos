@@ -1,6 +1,20 @@
 {
   "app": {
-    "signingConfigs": [],
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "/Users/liasica/.ohos/config/default_rotor-harmonyos_gSiSlFCGAwHb-Bx4lVzVQH88lAHdUGtN3hzehN8zda0=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001B77723DD692262455AABC2DA837FF96507C35E4C1ED38A2F45576D01E07774D31FB32C4F91BB6FA",
+          "profile": "/Users/liasica/.ohos/config/default_rotor-harmonyos_gSiSlFCGAwHb-Bx4lVzVQH88lAHdUGtN3hzehN8zda0=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "/Users/liasica/.ohos/config/default_rotor-harmonyos_gSiSlFCGAwHb-Bx4lVzVQH88lAHdUGtN3hzehN8zda0=.p12",
+          "storePassword": "0000001BC4FD1DD7ABB1764CB9D5A4F6A07128984CCF2B7F8A381F26BFCCF557C77D298A02BFF186253C2E"
+        }
+      }
+    ],
     "products": [
       {
         "name": "default",
