@@ -1,16 +1,29 @@
 {
   "string": [
-    {
-      "name": "module_desc",
-      "value": "module description"
-    },
-    {
-      "name": "EntryAbility_desc",
-      "value": "description"
-    },
-    {
-      "name": "EntryAbility_label",
-      "value": "label"
-    }
+    { "name": "module_desc", "value": "Rotor module" },
+    { "name": "EntryAbility_desc", "value": "Rotor authenticator" },
+    { "name": "EntryAbility_label", "value": "Rotor" },
+    { "name": "search_placeholder", "value": "搜索" },
+    { "name": "label_name", "value": "名称" },
+    { "name": "label_note", "value": "描述" },
+    { "name": "label_secret", "value": "秘钥" },
+    { "name": "label_type", "value": "类型" },
+    { "name": "type_totp", "value": "基于时间" },
+    { "name": "type_hotp", "value": "基于计数器" },
+    { "name": "type_hotp_disabled", "value": "暂不支持" },
+    { "name": "menu_input_secret", "value": "输入设置密钥" },
+    { "name": "menu_scan_qr", "value": "扫描二维码" },
+    { "name": "btn_cancel", "value": "取消" },
+    { "name": "btn_delete", "value": "删除" },
+    { "name": "btn_edit", "value": "编辑" },
+    { "name": "btn_save", "value": "保存" },
+    { "name": "toast_copied", "value": "已复制" },
+    { "name": "delete_confirm", "value": "是否要删除 %s？" },
+    { "name": "edit_title", "value": "编辑" },
+    { "name": "add_title", "value": "添加" },
+    { "name": "empty_hint", "value": "点击右下角加号添加账号" },
+    { "name": "scan_invalid", "value": "未识别的二维码" },
+    { "name": "secret_invalid", "value": "秘钥格式不正确" },
+    { "name": "name_required", "value": "请填写名称" }
   ]
 }
