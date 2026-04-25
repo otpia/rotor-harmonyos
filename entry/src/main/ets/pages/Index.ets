@@ -147,35 +147,27 @@ struct Index {
   }
 
   @Builder SwipeStart(a: OtpAccount) {
-    Row() {
-      Stack() {
-        SymbolGlyph($r('sys.symbol.square_and_pencil'))
-          .fontSize(20)
-          .fontColor([$r('app.color.accent_blue')])
-      }
-      .backgroundColor($r('app.color.bg_card'))
-      .width(48).height(48).borderRadius(24)
-      .onClick(() => this.edit(a))
+    Stack() {
+      SymbolGlyph($r('sys.symbol.square_and_pencil'))
+        .fontSize(20)
+        .fontColor([$r('app.color.accent_blue')])
     }
-    .height('100%')
-    .alignItems(VerticalAlign.Center)
-    .padding({ left: 8, right: 16 })
+    .width(48).height(48).borderRadius(24)
+    .backgroundColor($r('app.color.bg_card'))
+    .margin({ left: 8, right: 16, top: 8, bottom: 8 })
+    .onClick(() => this.edit(a))
   }
 
   @Builder SwipeEnd(a: OtpAccount) {
-    Row() {
-      Stack() {
-        SymbolGlyph($r('sys.symbol.trash'))
-          .fontSize(20)
-          .fontColor([Color.White])
-      }
-      .backgroundColor($r('app.color.accent_red'))
-      .width(48).height(48).borderRadius(24)
-      .onClick(() => this.askDelete(a))
+    Stack() {
+      SymbolGlyph($r('sys.symbol.trash'))
+        .fontSize(20)
+        .fontColor([Color.White])
     }
-    .height('100%')
-    .alignItems(VerticalAlign.Center)
-    .padding({ left: 16, right: 8 })
+    .width(48).height(48).borderRadius(24)
+    .backgroundColor($r('app.color.accent_red'))
+    .margin({ left: 16, right: 8, top: 8, bottom: 8 })
+    .onClick(() => this.askDelete(a))
   }
 
   build() {
@@ -202,7 +194,8 @@ struct Index {
               }
               .swipeAction({
                 start: { builder: () => { this.SwipeStart(a) } },
-                end: { builder: () => { this.SwipeEnd(a) } }
+                end: { builder: () => { this.SwipeEnd(a) } },
+                edgeEffect: SwipeEdgeEffect.None
               })
             }, (a: OtpAccount) => a.id)
           }
