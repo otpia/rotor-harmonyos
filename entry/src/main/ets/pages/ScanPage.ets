@@ -1,6 +1,7 @@
 import { scanCore, scanBarcode } from '@kit.ScanKit';
 import { abilityAccessCtrl, common, PermissionRequestResult, Permissions } from '@kit.AbilityKit';
 import { parseOtpAuth, ParsedOtpAuth } from '../utils/OtpAuthUri';
+import { PageContainer } from '../components/PageContainer';
 
 @Entry
 @Component
@@ -43,11 +44,15 @@ struct ScanPage {
     }
   }
 
-  build() {
+  @Builder PageBody() {
     Column() {
       Text('正在打开相机…').fontColor($r('app.color.text_primary'))
     }.width('100%').height('100%').justifyContent(FlexAlign.Center)
-    .backgroundColor($r('app.color.bg_app'))
-    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+  }
+
+  build() {
+    Stack() {
+      PageContainer({ content: () => { this.PageBody() } })
+    }.width('100%').height('100%')
   }
 }

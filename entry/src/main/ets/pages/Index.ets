@@ -10,6 +10,7 @@ import { SearchBar } from '../components/SearchBar';
 import { CopyToast } from '../components/CopyToast';
 import { PlusMenuPopup } from '../components/PlusMenuPopup';
 import { DeleteConfirmDialog } from '../components/DeleteConfirmDialog';
+import { PageContainer } from '../components/PageContainer';
 
 interface CodeState {
   code: string;
@@ -160,7 +161,7 @@ struct Index {
       .onClick(() => this.askDelete(a))
   }
 
-  build() {
+  @Builder PageBody() {
     Stack() {
       Column() {
         SearchBar({ query: $query }).margin({ left: 16, right: 16, top: 16, bottom: 8 })
@@ -222,7 +223,11 @@ struct Index {
       }
     }
     .width('100%').height('100%')
-    .backgroundColor($r('app.color.bg_app'))
-    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+  }
+
+  build() {
+    Stack() {
+      PageContainer({ content: () => { this.PageBody() } })
+    }.width('100%').height('100%')
   }
 }

@@ -18,12 +18,33 @@ export default class EntryAbility extends UIAbility {
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onDestroy');
   }
 
+  private updateAvoidAreas(mainWindow: window.Window): void {
+    try {
+      const top = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+      AppStorage.setOrCreate<number>('topSafeAreaPx', top.topRect.height);
+    } catch (e) {
+      hilog.error(DOMAIN, 'testTag', 'getWindowAvoidArea TYPE_SYSTEM failed: %{public}s', JSON.stringify(e));
+    }
+    try {
+      const bottom = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR);
+      AppStorage.setOrCreate<number>('bottomSafeAreaPx', bottom.bottomRect.height);
+    } catch (e) {
+      hilog.error(DOMAIN, 'testTag', 'getWindowAvoidArea TYPE_NAVIGATION_INDICATOR failed: %{public}s', JSON.stringify(e));
+    }
+  }
+
   onWindowStageCreate(windowStage: window.WindowStage): void {
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
 
     try {
       const mainWindow = windowStage.getMainWindowSync();
       mainWindow.setWindowLayoutFullScreen(true);
+      this.updateAvoidAreas(mainWindow);
+      try {
+        mainWindow.on('avoidAreaChange', () => this.updateAvoidAreas(mainWindow));
+      } catch (e) {
+        hilog.error(DOMAIN, 'testTag', 'avoidAreaChange listener failed: %{public}s', JSON.stringify(e));
+      }
     } catch (e) {
       hilog.error(DOMAIN, 'testTag', 'setWindowLayoutFullScreen failed: %{public}s', JSON.stringify(e));
     }

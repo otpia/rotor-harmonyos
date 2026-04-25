@@ -5,6 +5,7 @@ import { OtpAccountStore } from '../services/OtpAccountStore';
 import { SecretVault } from '../services/SecretVault';
 import { isValidBase32, base32Normalize } from '../utils/Base32';
 import { TypeSheet } from '../components/TypeSheet';
+import { PageContainer } from '../components/PageContainer';
 
 interface EditParams {
   id?: string;
@@ -105,9 +106,8 @@ struct EditPage {
     .alignItems(VerticalAlign.Center)
   }
 
-  build() {
-    Stack() {
-      Column() {
+  @Builder PageBody() {
+    Column() {
       Row() {
         this.NavButton($r('app.media.nav_close'), () => this.getUIContext().getRouter().back())
         Text(this.isEdit ? $r('app.string.edit_title') : $r('app.string.add_title'))
@@ -122,7 +122,6 @@ struct EditPage {
       .width('100%')
       .padding({ left: 16, right: 16 })
       .alignItems(VerticalAlign.Center)
-      .margin({ top: 44 })
 
       Column() {
         Image($r('app.media.edit_avatar')).width(80).height(80)
@@ -164,10 +163,12 @@ struct EditPage {
       .backgroundColor($r('app.color.bg_card'))
       .borderRadius(16)
       .margin({ left: 8, right: 8 })
-      }.width('100%').height('100%')
-    }
-    .width('100%').height('100%')
-    .backgroundColor($r('app.color.bg_app'))
-    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+    }.width('100%').height('100%')
+  }
+
+  build() {
+    Stack() {
+      PageContainer({ content: () => { this.PageBody() } })
+    }.width('100%').height('100%')
   }
 }
