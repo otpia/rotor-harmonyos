@@ -10,7 +10,6 @@
     { "name": "label_type", "value": "类型" },
     { "name": "type_totp", "value": "基于时间" },
     { "name": "type_hotp", "value": "基于计数器" },
-    { "name": "type_hotp_disabled", "value": "暂不支持" },
     { "name": "menu_input_secret", "value": "输入设置密钥" },
     { "name": "menu_scan_qr", "value": "扫描二维码" },
     { "name": "btn_cancel", "value": "取消" },
@@ -53,6 +52,15 @@
     { "name": "import_success_template_2", "value": " 个账号" },
     { "name": "export_success_template", "value": "已导出 " },
     { "name": "select_all", "value": "全选" },
-    { "name": "select_none", "value": "全不选" }
+    { "name": "select_none", "value": "全不选" },
+    { "name": "toast_camera_required", "value": "需要相机权限" },
+    { "name": "toast_qr_unrecognized", "value": "未识别的二维码" },
+    { "name": "toast_qr_no_account", "value": "二维码中没有可导入的账号" },
+    { "name": "toast_imported_count", "value": "已导入 %d 个账号" },
+    { "name": "toast_deleted_count", "value": "已删除 %d 个账号" },
+    { "name": "toast_exported_count", "value": "已导出 %d 个账号" },
+    { "name": "toast_select_at_least_one", "value": "请至少选择一个账号" },
+    { "name": "toast_export_failed", "value": "导出失败" },
+    { "name": "toast_import_failed", "value": "密码错误或文件已损坏" }
   ]
 }

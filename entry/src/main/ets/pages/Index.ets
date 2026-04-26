@@ -7,6 +7,7 @@ import { SecretVault } from '../services/SecretVault';
 import { totp, hotp, remainingSeconds } from '../services/OtpEngine';
 import { TickerService } from '../services/TickerService';
 import { importBackup } from '../services/BackupImporter';
+import { getString } from '../utils/I18n';
 import { OtpItem } from '../components/OtpItem';
 import { SearchBar } from '../components/SearchBar';
 import { CopyToast } from '../components/CopyToast';
@@ -265,12 +266,13 @@ struct Index {
     try {
       const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
       const count = await importBackup(ctx, this.pendingImportUri, password);
-      this.toast(`已导入 ${count} 个账号`);
+      this.toast(getString(ctx, 'toast_imported_count', count));
       this.pendingImportUri = '';
       this.refresh();
     } catch (e) {
       console.error('[Index.runImport]', e);
-      this.toast('密码错误或文件已损坏');
+      const ctx2 = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      this.toast(getString(ctx2, 'toast_import_failed'));
     }
   }
 

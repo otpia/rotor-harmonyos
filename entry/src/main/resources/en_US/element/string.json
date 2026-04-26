@@ -10,7 +10,6 @@
     { "name": "label_type", "value": "Type" },
     { "name": "type_totp", "value": "Time-based" },
     { "name": "type_hotp", "value": "Counter-based" },
-    { "name": "type_hotp_disabled", "value": "Coming soon" },
     { "name": "menu_input_secret", "value": "Enter setup key" },
     { "name": "menu_scan_qr", "value": "Scan QR code" },
     { "name": "btn_cancel", "value": "Cancel" },
@@ -53,6 +52,15 @@
     { "name": "import_success_template_2", "value": " accounts" },
     { "name": "export_success_template", "value": "Exported " },
     { "name": "select_all", "value": "Select all" },
-    { "name": "select_none", "value": "Select none" }
+    { "name": "select_none", "value": "Select none" },
+    { "name": "toast_camera_required", "value": "Camera permission required" },
+    { "name": "toast_qr_unrecognized", "value": "QR code not recognized" },
+    { "name": "toast_qr_no_account", "value": "No accounts in QR code" },
+    { "name": "toast_imported_count", "value": "Imported %d accounts" },
+    { "name": "toast_deleted_count", "value": "Deleted %d accounts" },
+    { "name": "toast_exported_count", "value": "Exported %d accounts" },
+    { "name": "toast_select_at_least_one", "value": "Select at least one account" },
+    { "name": "toast_export_failed", "value": "Export failed" },
+    { "name": "toast_import_failed", "value": "Wrong password or corrupted file" }
   ]
 }

@@ -53,7 +53,9 @@ struct EditPage {
   private async save(): Promise<void> {
     try {
       if (!this.valid()) {
-        const msg = !this.account.name ? '请填写名称' : '秘钥格式不正确';
+        const msg = !this.account.name
+          ? $r('app.string.name_required')
+          : $r('app.string.secret_invalid');
         try {
           this.getUIContext().getPromptAction().showToast({ message: msg });
         } catch (e) {

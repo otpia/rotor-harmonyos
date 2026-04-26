@@ -6,6 +6,7 @@ import { isMigrationUri, parseMigrationUri } from '../utils/MigrationUri';
 import { OtpAccountStore } from '../services/OtpAccountStore';
 import { SecretVault } from '../services/SecretVault';
 import { existingSecretSet } from '../services/AccountDedup';
+import { getString } from '../utils/I18n';
 import { PageContainer } from '../components/PageContainer';
 
 @Entry
@@ -23,7 +24,7 @@ struct ScanPage {
       const r: PermissionRequestResult = await atManager.requestPermissionsFromUser(ctx, perms);
       const granted = r.authResults && r.authResults[0] === 0;
       if (!granted) {
-        this.getUIContext().getPromptAction().showToast({ message: '需要相机权限' });
+        this.getUIContext().getPromptAction().showToast({ message: getString(ctx, 'toast_camera_required') });
         this.getUIContext().getRouter().back();
         return;
       }
@@ -45,7 +46,7 @@ struct ScanPage {
           params: { prefilled: parsed.account, prefilledSecret: parsed.secret }
         });
       } catch (_e) {
-        this.getUIContext().getPromptAction().showToast({ message: '未识别的二维码' });
+        this.getUIContext().getPromptAction().showToast({ message: getString(ctx, 'toast_qr_unrecognized') });
         this.getUIContext().getRouter().back();
       }
     } catch (_e) {
@@ -59,12 +60,12 @@ struct ScanPage {
       items = parseMigrationUri(uri);
     } catch (e) {
       console.error('[ScanPage.importMigration] parse failed', e);
-      this.getUIContext().getPromptAction().showToast({ message: '未识别的二维码' });
+      this.getUIContext().getPromptAction().showToast({ message: getString(ctx, 'toast_qr_unrecognized') });
       this.getUIContext().getRouter().back();
       return;
     }
     if (items.length === 0) {
-      this.getUIContext().getPromptAction().showToast({ message: '二维码中没有可导入的账号' });
+      this.getUIContext().getPromptAction().showToast({ message: getString(ctx, 'toast_qr_no_account') });
       this.getUIContext().getRouter().back();
       return;
     }
@@ -91,7 +92,7 @@ struct ScanPage {
         console.error('[ScanPage.importMigration] insert failed', e);
       }
     }
-    this.getUIContext().getPromptAction().showToast({ message: `已导入 ${imported} 个账号` });
+    this.getUIContext().getPromptAction().showToast({ message: getString(ctx, 'toast_imported_count', imported) });
     this.getUIContext().getRouter().back();
   }
 

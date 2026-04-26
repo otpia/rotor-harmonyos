@@ -5,6 +5,7 @@ import { OtpAccount } from '../model/OtpAccount';
 import { OtpAccountStore } from '../services/OtpAccountStore';
 import { SecretVault } from '../services/SecretVault';
 import { encryptBackup, BackupFile } from '../utils/BackupCrypto';
+import { getString } from '../utils/I18n';
 import { PageContainer } from '../components/PageContainer';
 import { PasswordDialog } from '../components/PasswordDialog';
 import { DeleteConfirmDialog } from '../components/DeleteConfirmDialog';
@@ -147,7 +148,7 @@ struct ExportPage {
         }
       }
       await this.load();
-      this.toast(`已删除 ${ids.length} 个账号`);
+      this.toast(getString(ctx, 'toast_deleted_count', ids.length));
     } catch (e) {
       console.error('[ExportPage.runDelete]', e);
     } finally {
@@ -158,7 +159,8 @@ struct ExportPage {
   private openExport(): void {
     if (this.busy) return;
     if (this.selectedCount() === 0) {
-      this.toast('请至少选择一个账号');
+      const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      this.toast(getString(ctx, 'toast_select_at_least_one'));
       return;
     }
     this.passwordDialog.open();
@@ -166,6 +168,7 @@ struct ExportPage {
 
   private async runExport(password: string): Promise<void> {
     if (this.busy) return;
+    const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
     try {
       this.busy = true;
       const items: BackupAccount[] = [];
@@ -212,11 +215,11 @@ struct ExportPage {
         fileIo.closeSync(f);
       }
 
-      this.toast(`已导出 ${items.length} 个账号`);
+      this.toast(getString(ctx, 'toast_exported_count', items.length));
       this.getUIContext().getRouter().back();
     } catch (e) {
       console.error('[ExportPage.runExport]', e);
-      this.toast('导出失败');
+      this.toast(getString(ctx, 'toast_export_failed'));
     } finally {
       this.busy = false;
     }
@@ -254,6 +257,7 @@ struct ExportPage {
 
   @Builder ToolbarDeleteButton() {
     Column() {
+      // TODO: toolbar_delete.png 当前由 SVG 代码生成，sketch 无对应图层。设计师补 frame 后替换为 3x 导出
       Image($r('app.media.toolbar_delete'))
         .width(24).height(24)
         .opacity(this.selectedCount() > 0 ? 1 : 0.4)
