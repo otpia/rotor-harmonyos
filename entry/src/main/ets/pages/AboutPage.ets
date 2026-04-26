@@ -27,15 +27,13 @@ struct AboutPage {
       Image(icon).width(24).height(24)
     }
     .width(40).height(40)
-    .borderRadius(20)
-    .backgroundColor($r('app.color.bg_button'))
     .onClick(onTap)
   }
 
   @Builder PageBody() {
     Column() {
       Row() {
-        this.NavButton($r('app.media.nav_close'), () => this.getUIContext().getRouter().back())
+        this.NavButton($r('app.media.nav_back'), () => this.getUIContext().getRouter().back())
         Text($r('app.string.about_title'))
           .fontSize(20)
           .fontWeight(FontWeight.Bolder)
