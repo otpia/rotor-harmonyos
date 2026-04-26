@@ -245,9 +245,9 @@ struct ExportPage {
         .fontSize(10)
         .fontWeight(FontWeight.Medium)
         .fontColor($r('app.color.text_primary'))
-        .margin({ top: 0 })
+        .margin({ top: 6 })
     }
-    .width(80).height(62)
+    .width(80).height(72)
     .justifyContent(FlexAlign.Center)
     .onClick(onTap)
   }
@@ -262,9 +262,9 @@ struct ExportPage {
         .fontWeight(FontWeight.Medium)
         .fontColor($r('app.color.accent_red'))
         .opacity(this.selectedCount() > 0 ? 1 : 0.4)
-        .margin({ top: 0 })
+        .margin({ top: 6 })
     }
-    .width(80).height(62)
+    .width(80).height(72)
     .justifyContent(FlexAlign.Center)
     .onClick(() => {
       if (this.selectedCount() > 0) this.askDelete();
@@ -307,7 +307,7 @@ struct ExportPage {
     Column() {
       Row() {
         this.NavBack(() => this.getUIContext().getRouter().back())
-        Text($r('app.string.export_title'))
+        Text($r('app.string.btn_edit'))
           .fontSize(20)
           .fontWeight(FontWeight.Bolder)
           .fontColor($r('app.color.text_primary'))

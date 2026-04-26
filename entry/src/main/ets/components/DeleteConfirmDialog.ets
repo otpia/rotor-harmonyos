@@ -7,7 +7,7 @@ export struct DeleteConfirmDialog {
   build() {
     Column() {
       Text(`是否要删除 ${this.name}？`)
-        .fontSize(18)
+        .fontSize(20)
         .fontColor($r('app.color.text_primary'))
         .textAlign(TextAlign.Center)
         .width('100%')

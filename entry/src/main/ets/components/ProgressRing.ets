@@ -28,11 +28,18 @@ export struct ProgressRing {
 
   build() {
     Stack() {
-      Progress({ value: this.remaining, total: this.period, type: ProgressType.Ring })
+      // 底层：完整深色环
+      Progress({ value: this.period, total: this.period, type: ProgressType.Ring })
         .width(36).height(36)
         .style({ strokeWidth: 3, enableSmoothEffect: false })
         .backgroundColor(Color.Transparent)
         .color(this.color())
+      // 顶层：用卡片背景色覆盖「已消耗」段，使缺口从 12 点起顺时针扩张
+      Progress({ value: this.period - this.remaining, total: this.period, type: ProgressType.Ring })
+        .width(36).height(36)
+        .style({ strokeWidth: 3, enableSmoothEffect: false })
+        .backgroundColor(Color.Transparent)
+        .color(Color.White)
     }
     .width(40).height(40)
   }
