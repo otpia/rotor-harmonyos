@@ -86,8 +86,6 @@ struct EditPage {
       Image(icon).width(24).height(24)
     }
     .width(40).height(40)
-    .borderRadius(20)
-    .backgroundColor($r('app.color.bg_button'))
     .onClick(onTap)
   }
 

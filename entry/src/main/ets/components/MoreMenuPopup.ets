@@ -1,8 +1,7 @@
 @Component
 export struct MoreMenuPopup {
-  onMultiDelete?: () => void;
-  onExport?: () => void;
   onImport?: () => void;
+  onEdit?: () => void;
   onAbout?: () => void;
 
   @Builder Item(text: Resource, onTap: () => void) {
@@ -16,11 +15,9 @@ export struct MoreMenuPopup {
 
   build() {
     Column({ space: 13 }) {
-      this.Item($r('app.string.menu_multi_delete'), () => { if (this.onMultiDelete) this.onMultiDelete(); })
-      Divider().color($r('app.color.divider')).strokeWidth(1).margin({ left: 16, right: 16 })
-      this.Item($r('app.string.menu_export'), () => { if (this.onExport) this.onExport(); })
-      Divider().color($r('app.color.divider')).strokeWidth(1).margin({ left: 16, right: 16 })
       this.Item($r('app.string.menu_import'), () => { if (this.onImport) this.onImport(); })
+      Divider().color($r('app.color.divider')).strokeWidth(1).margin({ left: 16, right: 16 })
+      this.Item($r('app.string.btn_edit'), () => { if (this.onEdit) this.onEdit(); })
       Divider().color($r('app.color.divider')).strokeWidth(1).margin({ left: 16, right: 16 })
       this.Item($r('app.string.menu_about'), () => { if (this.onAbout) this.onAbout(); })
     }

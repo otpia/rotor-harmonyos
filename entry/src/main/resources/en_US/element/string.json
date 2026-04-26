@@ -28,7 +28,6 @@
     { "name": "menu_export", "value": "Export backup" },
     { "name": "menu_import", "value": "Import backup" },
     { "name": "menu_about", "value": "About" },
-    { "name": "menu_multi_delete", "value": "Select to delete" },
     { "name": "about_title", "value": "About" },
     { "name": "about_description", "value": "Rotor is a local-first 2FA app following RFC 6238. Secrets are stored only in the system credential store and never uploaded." },
     { "name": "about_repo", "value": "Source code" },

@@ -7,6 +7,7 @@ import { SecretVault } from '../services/SecretVault';
 import { encryptBackup, BackupFile } from '../utils/BackupCrypto';
 import { PageContainer } from '../components/PageContainer';
 import { PasswordDialog } from '../components/PasswordDialog';
+import { DeleteConfirmDialog } from '../components/DeleteConfirmDialog';
 
 interface BackupAccount {
   name: string;
@@ -24,12 +25,18 @@ interface BackupPlain {
   accounts: BackupAccount[];
 }
 
+interface ExportParams {
+  prefilledIds?: string[];
+}
+
 @Entry
 @Component
 struct ExportPage {
   @State accounts: OtpAccount[] = [];
   @State selected: Record<string, boolean> = {};
   @State busy: boolean = false;
+  @State pendingDeleteName: string = '';
+  private prefilledIds: string[] = [];
 
   passwordDialog: CustomDialogController = new CustomDialogController({
     builder: PasswordDialog({
@@ -42,7 +49,25 @@ struct ExportPage {
     maskColor: $r('app.color.scrim')
   });
 
+  deleteDialog: CustomDialogController = new CustomDialogController({
+    builder: DeleteConfirmDialog({
+      name: this.pendingDeleteName,
+      onConfirm: () => this.runDelete()
+    }),
+    alignment: DialogAlignment.Bottom,
+    customStyle: true,
+    maskColor: $r('app.color.scrim')
+  });
+
   aboutToAppear(): void {
+    try {
+      const params = this.getUIContext().getRouter().getParams() as ExportParams;
+      if (params && params.prefilledIds && params.prefilledIds.length > 0) {
+        this.prefilledIds = params.prefilledIds;
+      }
+    } catch (e) {
+      console.error('[ExportPage.aboutToAppear]', e);
+    }
     this.load();
   }
 
@@ -50,8 +75,10 @@ struct ExportPage {
     try {
       const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
       this.accounts = await OtpAccountStore.listAll(ctx);
+      const presetMap: Record<string, boolean> = {};
+      for (const id of this.prefilledIds) presetMap[id] = true;
       const sel: Record<string, boolean> = {};
-      for (const a of this.accounts) sel[a.id] = false;
+      for (const a of this.accounts) sel[a.id] = presetMap[a.id] === true;
       this.selected = sel;
     } catch (e) {
       console.error('[ExportPage.load]', e);
@@ -80,6 +107,52 @@ struct ExportPage {
     for (const k of Object.keys(this.selected)) next[k] = this.selected[k];
     next[id] = on;
     this.selected = next;
+  }
+
+  private askDelete(): void {
+    const n = this.selectedCount();
+    if (n === 0) return;
+    let name = '';
+    if (n === 1) {
+      for (const a of this.accounts) if (this.selected[a.id]) { name = a.name; break; }
+    } else {
+      name = `这 ${n} 项`;
+    }
+    this.pendingDeleteName = name;
+    this.deleteDialog = new CustomDialogController({
+      builder: DeleteConfirmDialog({
+        name,
+        onConfirm: () => this.runDelete()
+      }),
+      alignment: DialogAlignment.Bottom,
+      customStyle: true,
+      maskColor: $r('app.color.scrim')
+    });
+    this.deleteDialog.open();
+  }
+
+  private async runDelete(): Promise<void> {
+    if (this.busy) return;
+    try {
+      this.busy = true;
+      const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      const ids: string[] = [];
+      for (const a of this.accounts) if (this.selected[a.id]) ids.push(a.id);
+      for (const id of ids) {
+        try {
+          await SecretVault.remove(id);
+          await OtpAccountStore.delete(ctx, id);
+        } catch (e) {
+          console.error('[ExportPage.runDelete.item]', e);
+        }
+      }
+      await this.load();
+      this.toast(`已删除 ${ids.length} 个账号`);
+    } catch (e) {
+      console.error('[ExportPage.runDelete]', e);
+    } finally {
+      this.busy = false;
+    }
   }
 
   private openExport(): void {
@@ -179,6 +252,25 @@ struct ExportPage {
     .onClick(onTap)
   }
 
+  @Builder ToolbarDeleteButton() {
+    Column() {
+      Image($r('app.media.toolbar_delete'))
+        .width(24).height(24)
+        .opacity(this.selectedCount() > 0 ? 1 : 0.4)
+      Text($r('app.string.btn_delete'))
+        .fontSize(10)
+        .fontWeight(FontWeight.Medium)
+        .fontColor($r('app.color.accent_red'))
+        .opacity(this.selectedCount() > 0 ? 1 : 0.4)
+        .margin({ top: 0 })
+    }
+    .width(80).height(62)
+    .justifyContent(FlexAlign.Center)
+    .onClick(() => {
+      if (this.selectedCount() > 0) this.askDelete();
+    })
+  }
+
   @Builder AccountRow(a: OtpAccount) {
     Row() {
       Column() {
@@ -246,6 +338,7 @@ struct ExportPage {
       .scrollBar(BarState.Off)
 
       Row() {
+        this.ToolbarDeleteButton()
         this.ToolbarButton($r('app.media.toolbar_export'), $r('app.string.menu_export_short'), () => this.openExport())
         this.ToolbarButton($r('app.media.toolbar_select_all'), $r('app.string.menu_select_all_short'), () => this.toggleAll())
       }

@@ -8,9 +8,6 @@ export struct OtpItem {
   @Prop account: OtpAccount;
   @Prop code: string = '------';
   @Prop remaining: number = 30;
-  @Prop editMode: boolean = false;
-  @Prop selected: boolean = false;
-  onTap?: () => void;
   onRefresh?: () => void;
 
   private codeColor(): Resource {
@@ -28,15 +25,6 @@ export struct OtpItem {
   build() {
     Column() {
       Row() {
-        if (this.editMode) {
-          Checkbox()
-            .select(this.selected)
-            .selectedColor($r('app.color.accent_blue'))
-            .shape(CheckBoxShape.ROUNDED_SQUARE)
-            .width(20).height(20)
-            .margin({ right: 12 })
-            .hitTestBehavior(HitTestMode.None)
-        }
         Image(iconForName(this.account.name)).width(24).height(24).borderRadius(12)
         Text(this.account.name)
           .fontSize(16)
@@ -80,6 +68,5 @@ export struct OtpItem {
     .borderRadius(20)
     .width('100%')
     .stateStyles({ normal: this.cardNormal, pressed: this.cardPressed })
-    .onClick(() => { if (this.onTap) this.onTap(); })
   }
 }

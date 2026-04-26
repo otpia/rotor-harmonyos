@@ -28,7 +28,6 @@
     { "name": "menu_export", "value": "导出备份" },
     { "name": "menu_import", "value": "导入备份" },
     { "name": "menu_about", "value": "关于" },
-    { "name": "menu_multi_delete", "value": "多选删除" },
     { "name": "about_title", "value": "关于" },
     { "name": "about_description", "value": "Rotor 是一款本地优先的双因素验证码 App，遵循 RFC 6238。秘钥仅保存在本机的系统级凭据库中，不会上传到任何服务器。" },
     { "name": "about_repo", "value": "源码仓库" },
