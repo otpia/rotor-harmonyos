@@ -13,12 +13,38 @@
           "profile": "/Users/liasica/Documents/工作/rotor/keys/release/RotorRelease.p7b",
           "certpath": "/Users/liasica/Documents/工作/rotor/keys/release/rotor_release.cer"
         }
+      },
+      {
+        "name": "device",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "/Users/liasica/.ohos/config/device_rotor-harmonyos_gSiSlFCGAwHb-Bx4lVzVQH88lAHdUGtN3hzehN8zda0=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001B54E26F62E02D34528B5D1898DFE223D1330E9BC21226BDAEA2624F822861AC310F1758709F0BA0",
+          "profile": "/Users/liasica/.ohos/config/device_rotor-harmonyos_gSiSlFCGAwHb-Bx4lVzVQH88lAHdUGtN3hzehN8zda0=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "/Users/liasica/.ohos/config/device_rotor-harmonyos_gSiSlFCGAwHb-Bx4lVzVQH88lAHdUGtN3hzehN8zda0=.p12",
+          "storePassword": "0000001B5C6157ED8E590D012583CD10269EB737829A70246BDD8EDA8E5D44422D1AA52A7716D2D0651365"
+        }
       }
     ],
     "products": [
       {
         "name": "default",
         "signingConfig": "default",
+        "targetSdkVersion": "6.1.0(23)",
+        "compatibleSdkVersion": "5.0.0(12)",
+        "runtimeOS": "HarmonyOS",
+        "buildOption": {
+          "strictMode": {
+            "caseSensitiveCheck": true,
+            "useNormalizedOHMUrl": true
+          }
+        }
+      },
+      {
+        "name": "device",
+        "signingConfig": "device",
         "targetSdkVersion": "6.1.0(23)",
         "compatibleSdkVersion": "5.0.0(12)",
         "runtimeOS": "HarmonyOS",
@@ -47,7 +73,8 @@
         {
           "name": "default",
           "applyToProducts": [
-            "default"
+            "default",
+            "device"
           ]
         }
       ]
