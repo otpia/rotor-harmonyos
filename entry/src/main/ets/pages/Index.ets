@@ -136,7 +136,10 @@ struct Index {
       await pasteboard.getSystemPasteboard().setData(data);
       this.activeId = a.id;
       this.toastVisible = true;
-      setTimeout(() => { this.toastVisible = false; }, 1500);
+      setTimeout(() => {
+        this.toastVisible = false;
+        this.activeId = '';
+      }, 1500);
     } catch (e) {
       console.error('[Index.copy]', e);
     }
