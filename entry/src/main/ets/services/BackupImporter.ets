@@ -4,6 +4,7 @@ import { util } from '@kit.ArkTS';
 import { defaultAccount, OtpAccount, OtpType } from '../model/OtpAccount';
 import { OtpAccountStore } from './OtpAccountStore';
 import { SecretVault } from './SecretVault';
+import { existingSecretSet } from './AccountDedup';
 import { decryptBackup, BackupFile } from '../utils/BackupCrypto';
 
 interface BackupAccount {
@@ -38,9 +39,11 @@ export async function importBackup(ctx: common.UIAbilityContext, uri: string, pa
   const plainText = await decryptBackup(password, file);
   const plain: BackupPlain = JSON.parse(plainText) as BackupPlain;
 
+  const existingSet = await existingSecretSet(ctx);
   let order = await OtpAccountStore.maxOrderIndex(ctx);
   let count = 0;
   for (const a of plain.accounts) {
+    if (existingSet.has(a.secret)) continue;
     try {
       const acct: OtpAccount = defaultAccount();
       acct.id = util.generateRandomUUID(false);
@@ -61,6 +64,7 @@ export async function importBackup(ctx: common.UIAbilityContext, uri: string, pa
       acct.updatedAt = now;
       await SecretVault.put(acct.id, a.secret);
       await OtpAccountStore.insert(ctx, acct);
+      existingSet.add(a.secret);
       count += 1;
     } catch (e) {
       console.error('[BackupImporter.insert]', e);

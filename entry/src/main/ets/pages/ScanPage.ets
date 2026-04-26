@@ -5,6 +5,7 @@ import { parseOtpAuth, ParsedOtpAuth } from '../utils/OtpAuthUri';
 import { isMigrationUri, parseMigrationUri } from '../utils/MigrationUri';
 import { OtpAccountStore } from '../services/OtpAccountStore';
 import { SecretVault } from '../services/SecretVault';
+import { existingSecretSet } from '../services/AccountDedup';
 import { PageContainer } from '../components/PageContainer';
 
 @Entry
@@ -67,9 +68,11 @@ struct ScanPage {
       this.getUIContext().getRouter().back();
       return;
     }
+    const existingSet = await existingSecretSet(ctx);
     let imported = 0;
     let order = await OtpAccountStore.maxOrderIndex(ctx);
     for (const item of items) {
+      if (existingSet.has(item.secret)) continue;
       try {
         const acct = item.account;
         acct.id = util.generateRandomUUID(false);
@@ -82,6 +85,7 @@ struct ScanPage {
         acct.updatedAt = now;
         await SecretVault.put(acct.id, item.secret);
         await OtpAccountStore.insert(ctx, acct);
+        existingSet.add(item.secret);
         imported += 1;
       } catch (e) {
         console.error('[ScanPage.importMigration] insert failed', e);

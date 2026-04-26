@@ -3,6 +3,7 @@ export struct PasswordDialog {
   controller: CustomDialogController;
   title: ResourceStr = '';
   needConfirm: boolean = true;
+  submitLabel: ResourceStr = $r('app.string.btn_save');
   onSubmit?: (pwd: string) => void;
   @State pwd: string = '';
   @State pwd2: string = '';
@@ -68,7 +69,7 @@ export struct PasswordDialog {
           .layoutWeight(1).height(48)
           .borderRadius(24)
           .onClick(() => this.controller.close())
-        Button($r('app.string.btn_save'))
+        Button(this.submitLabel)
           .backgroundColor($r('app.color.bg_button'))
           .fontColor($r('app.color.accent_blue'))
           .fontSize(18).fontWeight(FontWeight.Medium)

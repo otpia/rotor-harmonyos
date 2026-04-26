@@ -97,11 +97,13 @@ struct EditPage {
         .fontColor($r('app.color.text_primary'))
         .placeholderColor($r('app.color.text_placeholder'))
         .backgroundColor(Color.Transparent)
-        .padding({ left: 0, right: 0 })
+        .caretStyle({ width: 2, color: $r('app.color.accent_blue') })
+        .caretColor($r('app.color.accent_blue'))
+        .padding(0)
         .layoutWeight(1)
+        .height(50)
         .onChange(onChange)
     }
-    .height(50)
     .padding({ left: 24, right: 24 })
     .alignItems(VerticalAlign.Center)
   }

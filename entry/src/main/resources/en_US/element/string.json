@@ -17,6 +17,7 @@
     { "name": "btn_delete", "value": "Delete" },
     { "name": "btn_edit", "value": "Edit" },
     { "name": "btn_save", "value": "Save" },
+    { "name": "btn_import", "value": "Import" },
     { "name": "toast_copied", "value": "Copied" },
     { "name": "delete_confirm", "value": "Delete %s?" },
     { "name": "edit_title", "value": "Edit" },

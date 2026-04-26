@@ -17,6 +17,7 @@
     { "name": "btn_delete", "value": "删除" },
     { "name": "btn_edit", "value": "编辑" },
     { "name": "btn_save", "value": "保存" },
+    { "name": "btn_import", "value": "导入" },
     { "name": "toast_copied", "value": "已复制" },
     { "name": "delete_confirm", "value": "是否要删除 %s？" },
     { "name": "edit_title", "value": "编辑" },

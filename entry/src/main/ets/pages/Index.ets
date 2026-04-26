@@ -52,6 +52,7 @@ struct Index {
     builder: PasswordDialog({
       title: $r('app.string.import_password_hint'),
       needConfirm: false,
+      submitLabel: $r('app.string.btn_import'),
       onSubmit: (pwd: string) => this.runImport(pwd)
     }),
     alignment: DialogAlignment.Bottom,
@@ -246,6 +247,7 @@ struct Index {
         builder: PasswordDialog({
           title: $r('app.string.import_password_hint'),
           needConfirm: false,
+          submitLabel: $r('app.string.btn_import'),
           onSubmit: (pwd: string) => this.runImport(pwd)
         }),
         alignment: DialogAlignment.Bottom,
