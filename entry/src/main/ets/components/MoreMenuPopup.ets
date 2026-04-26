@@ -1,5 +1,6 @@
 @Component
 export struct MoreMenuPopup {
+  onMultiDelete?: () => void;
   onExport?: () => void;
   onImport?: () => void;
   onAbout?: () => void;
@@ -15,6 +16,8 @@ export struct MoreMenuPopup {
 
   build() {
     Column({ space: 13 }) {
+      this.Item($r('app.string.menu_multi_delete'), () => { if (this.onMultiDelete) this.onMultiDelete(); })
+      Divider().color($r('app.color.divider')).strokeWidth(1).margin({ left: 16, right: 16 })
       this.Item($r('app.string.menu_export'), () => { if (this.onExport) this.onExport(); })
       Divider().color($r('app.color.divider')).strokeWidth(1).margin({ left: 16, right: 16 })
       this.Item($r('app.string.menu_import'), () => { if (this.onImport) this.onImport(); })

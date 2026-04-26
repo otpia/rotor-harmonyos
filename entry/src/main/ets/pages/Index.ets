@@ -194,10 +194,10 @@ struct Index {
     }
   }
 
-  private enterEditMode(initialId: string): void {
+  private enterEditMode(): void {
     if (this.editMode) return;
     const sel: Record<string, boolean> = {};
-    for (const a of this.accounts) sel[a.id] = a.id === initialId;
+    for (const a of this.accounts) sel[a.id] = false;
     this.multiSelected = sel;
     this.editMode = true;
     this.plusOpen = false;
@@ -378,7 +378,6 @@ struct Index {
                     if (this.editMode) this.toggleSelected(a.id);
                     else this.copy(a);
                   },
-                  onLongPress: () => { if (!this.editMode) this.enterEditMode(a.id); },
                   onRefresh: () => this.refreshHotp(a)
                 })
               }
@@ -392,14 +391,13 @@ struct Index {
           .layoutWeight(1)
           .padding({ left: 24, right: 24, top: this.editMode ? 8 : 0, bottom: 16 })
           .onItemDragStart((_event: ItemDragInfo, itemIndex: number) => {
-            if (!this.editMode) return;
             this.dragSource = itemIndex;
             return this.DragPreview.bind(this);
           })
           .onItemDrop((_event: ItemDragInfo, itemIndex: number, insertIndex: number, isSuccess: boolean) => {
             const from = this.dragSource;
             this.dragSource = -1;
-            if (!isSuccess || !this.editMode) return;
+            if (!isSuccess) return;
             this.reorder(from >= 0 ? from : itemIndex, insertIndex);
           })
         }
@@ -416,6 +414,10 @@ struct Index {
       if (this.moreOpen) {
         Column() {
           MoreMenuPopup({
+            onMultiDelete: () => {
+              this.moreOpen = false;
+              this.enterEditMode();
+            },
             onExport: () => {
               this.moreOpen = false;
               this.getUIContext().getRouter().pushUrl({ url: 'pages/ExportPage' });

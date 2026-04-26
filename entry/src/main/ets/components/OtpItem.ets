@@ -12,7 +12,6 @@ export struct OtpItem {
   @Prop selected: boolean = false;
   onTap?: () => void;
   onRefresh?: () => void;
-  onLongPress?: () => void;
 
   private codeColor(): Resource {
     return this.remaining < 6 ? $r('app.color.accent_red') : $r('app.color.text_primary');
@@ -81,15 +80,6 @@ export struct OtpItem {
     .borderRadius(20)
     .width('100%')
     .stateStyles({ normal: this.cardNormal, pressed: this.cardPressed })
-    .priorityGesture(
-      this.editMode
-        ? (TapGesture().onAction(() => { if (this.onTap) this.onTap(); }) as GestureType)
-        : (GestureGroup(GestureMode.Exclusive,
-            LongPressGesture({ repeat: false, duration: 500 })
-              .onAction(() => { if (this.onLongPress) this.onLongPress(); }),
-            TapGesture()
-              .onAction(() => { if (this.onTap) this.onTap(); })
-          ) as GestureType)
-    )
+    .onClick(() => { if (this.onTap) this.onTap(); })
   }
 }
