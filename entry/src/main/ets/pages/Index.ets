@@ -1,16 +1,19 @@
 import { pasteboard } from '@kit.BasicServicesKit';
 import { common } from '@kit.AbilityKit';
+import { picker } from '@kit.CoreFileKit';
 import { OtpAccount, OtpType } from '../model/OtpAccount';
 import { OtpAccountStore } from '../services/OtpAccountStore';
 import { SecretVault } from '../services/SecretVault';
 import { totp, hotp, remainingSeconds } from '../services/OtpEngine';
 import { TickerService } from '../services/TickerService';
+import { importBackup } from '../services/BackupImporter';
 import { OtpItem } from '../components/OtpItem';
 import { SearchBar } from '../components/SearchBar';
 import { CopyToast } from '../components/CopyToast';
 import { PlusMenuPopup } from '../components/PlusMenuPopup';
 import { MoreMenuPopup } from '../components/MoreMenuPopup';
 import { DeleteConfirmDialog } from '../components/DeleteConfirmDialog';
+import { PasswordDialog } from '../components/PasswordDialog';
 import { PageContainer } from '../components/PageContainer';
 
 interface CodeState {
@@ -32,12 +35,24 @@ struct Index {
   // 自增版本号，配合 ForEach key 在 onPageShow 时强制重建列表，重置 swipeAction 偏移
   @State listVersion: number = 0;
   private pendingDeleteId: string = '';
+  private pendingImportUri: string = '';
   private unsubTick: (() => void) | null = null;
 
   deleteDialog: CustomDialogController = new CustomDialogController({
     builder: DeleteConfirmDialog({
       name: this.pendingDeleteName,
       onConfirm: () => this.confirmDelete()
+    }),
+    alignment: DialogAlignment.Bottom,
+    customStyle: true,
+    maskColor: $r('app.color.scrim')
+  });
+
+  importPasswordDialog: CustomDialogController = new CustomDialogController({
+    builder: PasswordDialog({
+      title: $r('app.string.import_password_hint'),
+      needConfirm: false,
+      onSubmit: (pwd: string) => this.runImport(pwd)
     }),
     alignment: DialogAlignment.Bottom,
     customStyle: true,
@@ -221,7 +236,48 @@ struct Index {
 
   private async handleImport(): Promise<void> {
     this.moreOpen = false;
-    this.getUIContext().getRouter().pushUrl({ url: 'pages/ImportPage' });
+    try {
+      const docPicker = new picker.DocumentViewPicker();
+      const opts: picker.DocumentSelectOptions = { maxSelectNumber: 1 };
+      const uris = await docPicker.select(opts);
+      if (!uris || uris.length === 0) return;
+      this.pendingImportUri = uris[0];
+      this.importPasswordDialog = new CustomDialogController({
+        builder: PasswordDialog({
+          title: $r('app.string.import_password_hint'),
+          needConfirm: false,
+          onSubmit: (pwd: string) => this.runImport(pwd)
+        }),
+        alignment: DialogAlignment.Bottom,
+        customStyle: true,
+        maskColor: $r('app.color.scrim')
+      });
+      this.importPasswordDialog.open();
+    } catch (e) {
+      console.error('[Index.handleImport]', e);
+    }
+  }
+
+  private async runImport(password: string): Promise<void> {
+    if (!this.pendingImportUri) return;
+    try {
+      const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      const count = await importBackup(ctx, this.pendingImportUri, password);
+      this.toast(`已导入 ${count} 个账号`);
+      this.pendingImportUri = '';
+      this.refresh();
+    } catch (e) {
+      console.error('[Index.runImport]', e);
+      this.toast('密码错误或文件已损坏');
+    }
+  }
+
+  private toast(msg: string): void {
+    try {
+      this.getUIContext().getPromptAction().showToast({ message: msg });
+    } catch (e) {
+      console.error('[Index.toast]', e);
+    }
   }
 
   private goExport(): void {

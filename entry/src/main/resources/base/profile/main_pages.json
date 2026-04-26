@@ -4,7 +4,6 @@
     "pages/EditPage",
     "pages/ScanPage",
     "pages/AboutPage",
-    "pages/ExportPage",
-    "pages/ImportPage"
+    "pages/ExportPage"
   ]
 }
