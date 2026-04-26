@@ -34,7 +34,7 @@ export struct OtpItem {
           .fontWeight(FontWeight.Bolder)
           .fontColor(this.codeColor())
           .layoutWeight(1)
-        ProgressRing({ remaining: this.remaining, period: this.account.period })
+        ProgressRing({ period: this.account.period })
       }
       .alignItems(VerticalAlign.Center)
       .margin({ top: 8 })
@@ -46,7 +46,7 @@ export struct OtpItem {
         .margin({ top: 8 })
         .width('100%')
     }
-    .padding(24)
+    .padding({ left: 24, right: 24, top: 16, bottom: 16 })
     .backgroundColor(this.highlighted ? $r('app.color.bg_card_active') : $r('app.color.bg_card'))
     .borderRadius(20)
     .width('100%')
