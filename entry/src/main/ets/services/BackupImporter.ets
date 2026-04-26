@@ -24,16 +24,26 @@ interface BackupPlain {
 }
 
 export async function importBackup(ctx: common.UIAbilityContext, uri: string, password: string): Promise<number> {
-  const f = fileIo.openSync(uri, fileIo.OpenMode.READ_ONLY);
   let text = '';
+  let f: fileIo.File | undefined;
   try {
+    f = fileIo.openSync(uri, fileIo.OpenMode.READ_ONLY);
     const stat = fileIo.statSync(f.fd);
     const size = stat.size;
     const buf = new ArrayBuffer(size);
     fileIo.readSync(f.fd, buf);
     text = util.TextDecoder.create('utf-8').decodeToString(new Uint8Array(buf));
+  } catch (e) {
+    console.error('[BackupImporter.read]', e);
+    throw e as Error;
   } finally {
-    fileIo.closeSync(f);
+    if (f) {
+      try {
+        fileIo.closeSync(f);
+      } catch (_e) {
+        // 关闭失败忽略
+      }
+    }
   }
   const file: BackupFile = JSON.parse(text) as BackupFile;
   const plainText = await decryptBackup(password, file);

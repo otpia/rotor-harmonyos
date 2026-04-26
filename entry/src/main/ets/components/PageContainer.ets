@@ -18,8 +18,8 @@ export struct PageContainer {
       .width('100%')
       .height('100%')
       .padding({
-        top: px2vp(this.topSafeAreaPx),
-        bottom: px2vp(this.bottomSafeAreaPx)
+        top: this.getUIContext().px2vp(this.topSafeAreaPx),
+        bottom: this.getUIContext().px2vp(this.bottomSafeAreaPx)
       })
     }
     .width('100%')

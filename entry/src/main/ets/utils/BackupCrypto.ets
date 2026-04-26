@@ -40,9 +40,14 @@ function b64Decode(s: string): Uint8Array {
 }
 
 function randomBytes(n: number): Uint8Array {
-  const r = cryptoFramework.createRandom();
-  const blob = r.generateRandomSync(n);
-  return new Uint8Array(blob.data);
+  try {
+    const r = cryptoFramework.createRandom();
+    const blob = r.generateRandomSync(n);
+    return new Uint8Array(blob.data);
+  } catch (e) {
+    console.error('[BackupCrypto.randomBytes]', e);
+    throw e as Error;
+  }
 }
 
 function concat(a: Uint8Array, b: Uint8Array): Uint8Array {
@@ -53,36 +58,46 @@ function concat(a: Uint8Array, b: Uint8Array): Uint8Array {
 }
 
 async function deriveKeys(password: string, salt: Uint8Array): Promise<DerivedKeys> {
-  const kdf = cryptoFramework.createKdf('PBKDF2|SHA256');
-  const spec: cryptoFramework.PBKDF2Spec = {
-    algName: 'PBKDF2',
-    password: password,
-    salt: salt,
-    iterations: ITER,
-    keySize: ENC_KEY_BYTES + MAC_KEY_BYTES
-  };
-  const blob = await kdf.generateSecret(spec);
-  const out = new Uint8Array(blob.data);
-  return {
-    encKey: out.slice(0, ENC_KEY_BYTES),
-    macKey: out.slice(ENC_KEY_BYTES, ENC_KEY_BYTES + MAC_KEY_BYTES)
-  };
+  try {
+    const kdf = cryptoFramework.createKdf('PBKDF2|SHA256');
+    const spec: cryptoFramework.PBKDF2Spec = {
+      algName: 'PBKDF2',
+      password: password,
+      salt: salt,
+      iterations: ITER,
+      keySize: ENC_KEY_BYTES + MAC_KEY_BYTES
+    };
+    const blob = await kdf.generateSecret(spec);
+    const out = new Uint8Array(blob.data);
+    return {
+      encKey: out.slice(0, ENC_KEY_BYTES),
+      macKey: out.slice(ENC_KEY_BYTES, ENC_KEY_BYTES + MAC_KEY_BYTES)
+    };
+  } catch (e) {
+    console.error('[BackupCrypto.deriveKeys]', e);
+    throw e as Error;
+  }
 }
 
 async function aesCbc(mode: cryptoFramework.CryptoMode, key: Uint8Array, iv: Uint8Array, input: Uint8Array): Promise<Uint8Array> {
-  const gen = cryptoFramework.createSymKeyGenerator('AES256');
-  const symKey = await gen.convertKey({ data: key } as cryptoFramework.DataBlob);
-  const cipher = cryptoFramework.createCipher('AES256|CBC|PKCS7');
-  const params: cryptoFramework.IvParamsSpec = {
-    algName: 'IvParamsSpec',
-    iv: { data: iv } as cryptoFramework.DataBlob
-  };
-  await cipher.init(mode, symKey, params);
-  const update = await cipher.update({ data: input } as cryptoFramework.DataBlob);
-  const doFinal = await cipher.doFinal(null);
-  const left = update && update.data ? new Uint8Array(update.data) : new Uint8Array(0);
-  const right = doFinal && doFinal.data ? new Uint8Array(doFinal.data) : new Uint8Array(0);
-  return concat(left, right);
+  try {
+    const gen = cryptoFramework.createSymKeyGenerator('AES256');
+    const symKey = await gen.convertKey({ data: key } as cryptoFramework.DataBlob);
+    const cipher = cryptoFramework.createCipher('AES256|CBC|PKCS7');
+    const params: cryptoFramework.IvParamsSpec = {
+      algName: 'IvParamsSpec',
+      iv: { data: iv } as cryptoFramework.DataBlob
+    };
+    await cipher.init(mode, symKey, params);
+    const update = await cipher.update({ data: input } as cryptoFramework.DataBlob);
+    const doFinal = await cipher.doFinal(null);
+    const left = update && update.data ? new Uint8Array(update.data) : new Uint8Array(0);
+    const right = doFinal && doFinal.data ? new Uint8Array(doFinal.data) : new Uint8Array(0);
+    return concat(left, right);
+  } catch (e) {
+    console.error('[BackupCrypto.aesCbc]', e);
+    throw e as Error;
+  }
 }
 
 export async function encryptBackup(password: string, plaintext: string): Promise<BackupFile> {

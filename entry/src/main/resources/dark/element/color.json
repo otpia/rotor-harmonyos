@@ -12,7 +12,6 @@
     { "name": "accent_red", "value": "#E84026" },
     { "name": "bg_button", "value": "#1AFFFFFF" },
     { "name": "ring_normal", "value": "#FFFFFF" },
-    { "name": "ring_warn", "value": "#5A5A5C" },
     { "name": "ring_danger", "value": "#E84026" },
     { "name": "divider", "value": "#2C2C2E" },
     { "name": "scrim", "value": "#80000000" }

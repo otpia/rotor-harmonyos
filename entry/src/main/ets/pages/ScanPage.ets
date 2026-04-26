@@ -55,45 +55,49 @@ struct ScanPage {
   }
 
   private async importMigration(ctx: common.UIAbilityContext, uri: string): Promise<void> {
-    let items: ParsedOtpAuth[] = [];
     try {
-      items = parseMigrationUri(uri);
-    } catch (e) {
-      console.error('[ScanPage.importMigration] parse failed', e);
-      this.getUIContext().getPromptAction().showToast({ message: getString(ctx, 'toast_qr_unrecognized') });
-      this.getUIContext().getRouter().back();
-      return;
-    }
-    if (items.length === 0) {
-      this.getUIContext().getPromptAction().showToast({ message: getString(ctx, 'toast_qr_no_account') });
-      this.getUIContext().getRouter().back();
-      return;
-    }
-    const existingSet = await existingSecretSet(ctx);
-    let imported = 0;
-    let order = await OtpAccountStore.maxOrderIndex(ctx);
-    for (const item of items) {
-      if (existingSet.has(item.secret)) continue;
+      let items: ParsedOtpAuth[] = [];
       try {
-        const acct = item.account;
-        acct.id = util.generateRandomUUID(false);
-        acct.name = item.name;
-        acct.note = item.note;
-        order += 1;
-        acct.orderIndex = order;
-        const now = Date.now();
-        acct.createdAt = now;
-        acct.updatedAt = now;
-        await SecretVault.put(acct.id, item.secret);
-        await OtpAccountStore.insert(ctx, acct);
-        existingSet.add(item.secret);
-        imported += 1;
+        items = parseMigrationUri(uri);
       } catch (e) {
-        console.error('[ScanPage.importMigration] insert failed', e);
+        console.error('[ScanPage.importMigration] parse failed', e);
+        this.getUIContext().getPromptAction().showToast({ message: getString(ctx, 'toast_qr_unrecognized') });
+        this.getUIContext().getRouter().back();
+        return;
       }
+      if (items.length === 0) {
+        this.getUIContext().getPromptAction().showToast({ message: getString(ctx, 'toast_qr_no_account') });
+        this.getUIContext().getRouter().back();
+        return;
+      }
+      const existingSet = await existingSecretSet(ctx);
+      let imported = 0;
+      let order = await OtpAccountStore.maxOrderIndex(ctx);
+      for (const item of items) {
+        if (existingSet.has(item.secret)) continue;
+        try {
+          const acct = item.account;
+          acct.id = util.generateRandomUUID(false);
+          acct.name = item.name;
+          acct.note = item.note;
+          order += 1;
+          acct.orderIndex = order;
+          const now = Date.now();
+          acct.createdAt = now;
+          acct.updatedAt = now;
+          await SecretVault.put(acct.id, item.secret);
+          await OtpAccountStore.insert(ctx, acct);
+          existingSet.add(item.secret);
+          imported += 1;
+        } catch (e) {
+          console.error('[ScanPage.importMigration] insert failed', e);
+        }
+      }
+      this.getUIContext().getPromptAction().showToast({ message: getString(ctx, 'toast_imported_count', imported) });
+      this.getUIContext().getRouter().back();
+    } catch (e) {
+      console.error('[ScanPage.importMigration]', e);
     }
-    this.getUIContext().getPromptAction().showToast({ message: getString(ctx, 'toast_imported_count', imported) });
-    this.getUIContext().getRouter().back();
   }
 
   @Builder PageBody() {
