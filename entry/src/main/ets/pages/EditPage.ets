@@ -112,7 +112,7 @@ struct EditPage {
         this.NavButton($r('app.media.nav_close'), () => this.getUIContext().getRouter().back())
         Text(this.isEdit ? $r('app.string.edit_title') : $r('app.string.add_title'))
           .fontSize(20)
-          .fontWeight(FontWeight.Bolder)
+          .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
           .margin({ left: 8 })
           .layoutWeight(1)

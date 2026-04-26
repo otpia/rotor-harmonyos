@@ -132,7 +132,7 @@ struct ImportPage {
         this.NavButton($r('app.media.nav_back'), () => this.getUIContext().getRouter().back())
         Text($r('app.string.import_title'))
           .fontSize(20)
-          .fontWeight(FontWeight.Bolder)
+          .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
           .margin({ left: 8 })
           .layoutWeight(1)

@@ -309,7 +309,7 @@ struct ExportPage {
         this.NavBack(() => this.getUIContext().getRouter().back())
         Text($r('app.string.btn_edit'))
           .fontSize(20)
-          .fontWeight(FontWeight.Bolder)
+          .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
           .margin({ left: 8 })
           .layoutWeight(1)
