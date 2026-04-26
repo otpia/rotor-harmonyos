@@ -28,6 +28,8 @@ struct Index {
   @State toastVisible: boolean = false;
   @State plusOpen: boolean = false;
   @State pendingDeleteName: string = '';
+  // 自增版本号，配合 ForEach key 在 onPageShow 时强制重建列表，重置 swipeAction 偏移
+  @State listVersion: number = 0;
   private pendingDeleteId: string = '';
   private unsubTick: (() => void) | null = null;
 
@@ -50,6 +52,7 @@ struct Index {
   }
 
   onPageShow(): void {
+    this.listVersion++;
     this.refresh();
   }
 
@@ -188,12 +191,20 @@ struct Index {
                 end: { builder: () => { this.SwipeEnd(a) } },
                 edgeEffect: SwipeEdgeEffect.None
               })
-            }, (a: OtpAccount) => a.id)
+            }, (a: OtpAccount) => `${a.id}-${this.listVersion}`)
           }
           .layoutWeight(1)
           .padding({ left: 8, right: 8, bottom: 16 })
         }
       }.width('100%').height('100%').backgroundColor($r('app.color.bg_app'))
+
+      // 加号菜单展开时的全屏透明遮罩，点击空白处自动收起
+      if (this.plusOpen) {
+        Column()
+          .width('100%').height('100%')
+          .backgroundColor(Color.Transparent)
+          .onClick(() => { this.plusOpen = false; })
+      }
 
       Column() {
         if (this.plusOpen) {
