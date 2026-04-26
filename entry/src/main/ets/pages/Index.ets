@@ -41,7 +41,8 @@ struct Index {
       onConfirm: () => this.confirmDelete()
     }),
     alignment: DialogAlignment.Bottom,
-    customStyle: true
+    customStyle: true,
+    maskColor: $r('app.color.scrim')
   });
 
   aboutToAppear(): void {
@@ -154,7 +155,8 @@ struct Index {
         onConfirm: () => this.confirmDelete()
       }),
       alignment: DialogAlignment.Bottom,
-      customStyle: true
+      customStyle: true,
+      maskColor: $r('app.color.scrim')
     });
     this.deleteDialog.open();
   }

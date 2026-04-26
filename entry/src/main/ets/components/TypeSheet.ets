@@ -46,7 +46,7 @@ export struct TypeSheet {
         .borderRadius(24)
         .margin({ top: 16, left: 24, right: 24, bottom: 16 })
     }
-    .backgroundColor($r('app.color.bg_card'))
+    .backgroundColor($r('app.color.bg_dialog'))
     .borderRadius(20)
     .margin({ left: 8, right: 8, bottom: 8 })
     .width(344)

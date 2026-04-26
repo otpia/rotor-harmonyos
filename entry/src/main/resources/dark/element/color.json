@@ -3,6 +3,7 @@
     { "name": "start_window_background", "value": "#000000" },
     { "name": "bg_app", "value": "#000000" },
     { "name": "bg_card", "value": "#1C1C1E" },
+    { "name": "bg_dialog", "value": "#1C1C1E" },
     { "name": "bg_card_active", "value": "#2C2C2E" },
     { "name": "text_primary", "value": "#FFFFFF" },
     { "name": "text_secondary", "value": "#8E8E93" },

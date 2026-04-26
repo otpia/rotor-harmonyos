@@ -38,7 +38,8 @@ struct ExportPage {
       onSubmit: (pwd: string) => this.runExport(pwd)
     }),
     alignment: DialogAlignment.Bottom,
-    customStyle: true
+    customStyle: true,
+    maskColor: $r('app.color.scrim')
   });
 
   aboutToAppear(): void {
