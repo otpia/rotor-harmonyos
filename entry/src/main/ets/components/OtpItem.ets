@@ -39,6 +39,7 @@ export struct OtpItem {
         Text(formatGroups(this.code))
           .fontSize(40)
           .fontWeight(FontWeight.Bolder)
+          .fontFamily('HarmonyOS Sans Condensed')
           .fontColor(this.codeColor())
           .layoutWeight(1)
         if (this.account.type === OtpType.HOTP) {
