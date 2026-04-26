@@ -164,6 +164,19 @@ struct EditPage {
       .backgroundColor($r('app.color.bg_card'))
       .borderRadius(20)
       .margin({ left: 8, right: 8 })
+
+      if (this.account.type === OtpType.HOTP) {
+        Column() {
+          this.Field($r('app.string.label_counter'), String(this.account.counter), (v: string) => {
+            const n = parseInt(v);
+            this.account.counter = isNaN(n) ? 0 : n;
+          })
+        }
+        .padding({ top: 4, bottom: 4 })
+        .backgroundColor($r('app.color.bg_card'))
+        .borderRadius(20)
+        .margin({ left: 8, right: 8, top: 8 })
+      }
     }.width('100%').height('100%')
   }
 

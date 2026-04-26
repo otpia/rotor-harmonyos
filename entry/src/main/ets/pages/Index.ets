@@ -1,14 +1,15 @@
 import { pasteboard } from '@kit.BasicServicesKit';
 import { common } from '@kit.AbilityKit';
-import { OtpAccount } from '../model/OtpAccount';
+import { OtpAccount, OtpType } from '../model/OtpAccount';
 import { OtpAccountStore } from '../services/OtpAccountStore';
 import { SecretVault } from '../services/SecretVault';
-import { totp, remainingSeconds } from '../services/OtpEngine';
+import { totp, hotp, remainingSeconds } from '../services/OtpEngine';
 import { TickerService } from '../services/TickerService';
 import { OtpItem } from '../components/OtpItem';
 import { SearchBar } from '../components/SearchBar';
 import { CopyToast } from '../components/CopyToast';
 import { PlusMenuPopup } from '../components/PlusMenuPopup';
+import { MoreMenuPopup } from '../components/MoreMenuPopup';
 import { DeleteConfirmDialog } from '../components/DeleteConfirmDialog';
 import { PageContainer } from '../components/PageContainer';
 
@@ -27,6 +28,7 @@ struct Index {
   @State activeId: string = '';
   @State toastVisible: boolean = false;
   @State plusOpen: boolean = false;
+  @State moreOpen: boolean = false;
   @State pendingDeleteName: string = '';
   // 自增版本号，配合 ForEach key 在 onPageShow 时强制重建列表，重置 swipeAction 偏移
   @State listVersion: number = 0;
@@ -75,20 +77,47 @@ struct Index {
     try {
       const next: Record<string, CodeState> = {};
       for (const a of this.accounts) {
-        const remaining = remainingSeconds(now, a.period);
         const prev = this.codes[a.id];
         let code = prev ? prev.code : '------';
         const sec = this.secrets[a.id];
-        if (sec && (!prev || remaining === a.period || prev.code === '------')) {
-          try {
-            code = await totp(sec, now, a.period, a.digits, a.algorithm);
-          } catch (_e) { code = '------'; }
+        if (a.type === OtpType.HOTP) {
+          if (sec && (!prev || prev.code === '------')) {
+            try {
+              code = await hotp(sec, a.counter, a.digits, a.algorithm);
+            } catch (_e) { code = '------'; }
+          }
+          next[a.id] = { code, remaining: a.period };
+        } else {
+          const remaining = remainingSeconds(now, a.period);
+          if (sec && (!prev || remaining === a.period || prev.code === '------')) {
+            try {
+              code = await totp(sec, now, a.period, a.digits, a.algorithm);
+            } catch (_e) { code = '------'; }
+          }
+          next[a.id] = { code, remaining };
         }
-        next[a.id] = { code, remaining };
       }
       this.codes = next;
     } catch (e) {
       console.error('[Index.tick]', e);
+    }
+  }
+
+  private async refreshHotp(a: OtpAccount): Promise<void> {
+    try {
+      const sec = this.secrets[a.id];
+      if (!sec) return;
+      a.counter += 1;
+      a.updatedAt = Date.now();
+      const code = await hotp(sec, a.counter, a.digits, a.algorithm);
+      const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      await OtpAccountStore.update(ctx, a);
+      const next: Record<string, CodeState> = {};
+      for (const k of Object.keys(this.codes)) next[k] = this.codes[k];
+      next[a.id] = { code, remaining: a.period };
+      this.codes = next;
+    } catch (e) {
+      console.error('[Index.refreshHotp]', e);
     }
   }
 
@@ -164,10 +193,22 @@ struct Index {
       .onClick(() => this.askDelete(a))
   }
 
+  private async handleImport(): Promise<void> {
+    this.moreOpen = false;
+    this.getUIContext().getRouter().pushUrl({ url: 'pages/ImportPage' });
+  }
+
   @Builder PageBody() {
     Stack() {
       Column() {
-        SearchBar({ query: $query }).margin({ left: 24, right: 24, top: 64, bottom: 16 })
+        Row() {
+          Blank()
+          Image($r('app.media.more'))
+            .width(24).height(24)
+            .onClick(() => { this.moreOpen = !this.moreOpen; this.plusOpen = false; })
+        }.width('100%').height(56).padding({ left: 16, right: 16 })
+
+        SearchBar({ query: $query }).margin({ left: 24, right: 24, top: 8, bottom: 16 })
 
         if (this.accounts.length === 0) {
           Column() {
@@ -183,7 +224,8 @@ struct Index {
                   code: this.codes[a.id] ? this.codes[a.id].code : '------',
                   remaining: this.codes[a.id] ? this.codes[a.id].remaining : a.period,
                   highlighted: this.activeId === a.id,
-                  onTap: () => this.copy(a)
+                  onTap: () => this.copy(a),
+                  onRefresh: () => this.refreshHotp(a)
                 })
               }
               .swipeAction({
@@ -198,12 +240,28 @@ struct Index {
         }
       }.width('100%').height('100%').backgroundColor($r('app.color.bg_app'))
 
-      // 加号菜单展开时的全屏透明遮罩，点击空白处自动收起
-      if (this.plusOpen) {
+      // 加号或更多菜单展开时的全屏透明遮罩，点击空白处自动收起
+      if (this.plusOpen || this.moreOpen) {
         Column()
           .width('100%').height('100%')
           .backgroundColor(Color.Transparent)
-          .onClick(() => { this.plusOpen = false; })
+          .onClick(() => { this.plusOpen = false; this.moreOpen = false; })
+      }
+
+      if (this.moreOpen) {
+        Column() {
+          MoreMenuPopup({
+            onExport: () => {
+              this.moreOpen = false;
+              this.getUIContext().getRouter().pushUrl({ url: 'pages/ExportPage' });
+            },
+            onImport: () => { this.handleImport(); },
+            onAbout: () => {
+              this.moreOpen = false;
+              this.getUIContext().getRouter().pushUrl({ url: 'pages/AboutPage' });
+            }
+          })
+        }.position({ right: 16, top: 56 })
       }
 
       Column() {

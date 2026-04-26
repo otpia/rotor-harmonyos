@@ -1,5 +1,5 @@
 import { ProgressRing } from './ProgressRing';
-import { OtpAccount } from '../model/OtpAccount';
+import { OtpAccount, OtpType } from '../model/OtpAccount';
 import { iconForName } from '../utils/IssuerIcon';
 import { formatGroups } from '../services/OtpEngine';
 
@@ -10,6 +10,7 @@ export struct OtpItem {
   @Prop remaining: number = 30;
   @Prop highlighted: boolean = false;
   onTap?: () => void;
+  onRefresh?: () => void;
 
   private codeColor(): Resource {
     return this.remaining < 6 ? $r('app.color.accent_red') : $r('app.color.text_primary');
@@ -34,7 +35,18 @@ export struct OtpItem {
           .fontWeight(FontWeight.Bolder)
           .fontColor(this.codeColor())
           .layoutWeight(1)
-        ProgressRing({ period: this.account.period })
+        if (this.account.type === OtpType.HOTP) {
+          Text($r('app.string.btn_refresh'))
+            .fontSize(14)
+            .fontWeight(FontWeight.Medium)
+            .fontColor($r('app.color.accent_blue'))
+            .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+            .borderRadius(14)
+            .backgroundColor($r('app.color.bg_button'))
+            .onClick(() => { if (this.onRefresh) this.onRefresh(); })
+        } else {
+          ProgressRing({ period: this.account.period })
+        }
       }
       .alignItems(VerticalAlign.Center)
       .margin({ top: 8 })

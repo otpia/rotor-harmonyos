@@ -2,6 +2,9 @@
   "src": [
     "pages/Index",
     "pages/EditPage",
-    "pages/ScanPage"
+    "pages/ScanPage",
+    "pages/AboutPage",
+    "pages/ExportPage",
+    "pages/ImportPage"
   ]
 }

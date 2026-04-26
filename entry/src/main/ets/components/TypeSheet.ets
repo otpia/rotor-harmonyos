@@ -35,7 +35,7 @@ export struct TypeSheet {
         .fontColor($r('app.color.text_primary'))
         .alignSelf(ItemAlign.Start)
         .padding({ top: 16, left: 24, bottom: 8 })
-      this.TypeRow($r('app.string.type_hotp'), OtpType.HOTP, true)
+      this.TypeRow($r('app.string.type_hotp'), OtpType.HOTP, false)
       this.TypeRow($r('app.string.type_totp'), OtpType.TOTP, false)
       Button($r('app.string.btn_cancel'))
         .backgroundColor($r('app.color.bg_button'))
