@@ -20,8 +20,8 @@ export struct OtpItem {
       Row() {
         Image(iconForName(this.account.name)).width(24).height(24).borderRadius(12)
         Text(this.account.name)
-          .fontSize(18)
-          .fontWeight(FontWeight.Bold)
+          .fontSize(16)
+          .fontWeight(FontWeight.Medium)
           .margin({ left: 8 })
           .fontColor($r('app.color.text_primary'))
       }
@@ -31,7 +31,7 @@ export struct OtpItem {
       Row() {
         Text(formatGroups(this.code))
           .fontSize(40)
-          .fontWeight(FontWeight.Bold)
+          .fontWeight(FontWeight.Bolder)
           .fontColor(this.codeColor())
           .layoutWeight(1)
         ProgressRing({ remaining: this.remaining, period: this.account.period })
@@ -43,12 +43,12 @@ export struct OtpItem {
       Text(this.account.note)
         .fontSize(14)
         .fontColor($r('app.color.text_secondary'))
-        .margin({ top: 6 })
+        .margin({ top: 8 })
         .width('100%')
     }
     .padding(24)
     .backgroundColor(this.highlighted ? $r('app.color.bg_card_active') : $r('app.color.bg_card'))
-    .borderRadius(16)
+    .borderRadius(20)
     .width('100%')
     .onClick(() => { if (this.onTap) this.onTap(); })
   }

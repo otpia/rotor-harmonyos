@@ -7,28 +7,37 @@ export struct DeleteConfirmDialog {
   build() {
     Column() {
       Text(`是否要删除 ${this.name}？`)
-        .fontSize(16)
+        .fontSize(20)
         .fontColor($r('app.color.text_primary'))
-        .padding({ top: 24, bottom: 24 })
-      Row() {
+        .textAlign(TextAlign.Center)
+        .width('100%')
+        .margin({ top: 24 })
+      Row({ space: 8 }) {
         Button($r('app.string.btn_cancel'))
-          .backgroundColor(Color.Transparent)
+          .backgroundColor($r('app.color.bg_button'))
           .fontColor($r('app.color.accent_blue'))
+          .fontSize(18)
+          .fontWeight(FontWeight.Medium)
           .layoutWeight(1).height(48)
+          .borderRadius(24)
           .onClick(() => this.controller.close())
-        Divider().vertical(true).strokeWidth(0.5).color($r('app.color.divider')).height(20)
         Button($r('app.string.btn_delete'))
-          .backgroundColor(Color.Transparent)
+          .backgroundColor($r('app.color.bg_button'))
           .fontColor($r('app.color.accent_red'))
+          .fontSize(18)
+          .fontWeight(FontWeight.Medium)
           .layoutWeight(1).height(48)
+          .borderRadius(24)
           .onClick(() => {
             this.controller.close();
             if (this.onConfirm) this.onConfirm();
           })
       }
+      .margin({ top: 12, left: 24, right: 24, bottom: 16 })
     }
     .backgroundColor($r('app.color.bg_card'))
-    .borderRadius({ topLeft: 16, topRight: 16 })
-    .width('100%')
+    .borderRadius(20)
+    .margin({ left: 8, right: 8, bottom: 8 })
+    .width(344)
   }
 }

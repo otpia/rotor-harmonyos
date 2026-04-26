@@ -92,12 +92,13 @@ struct EditPage {
 
   @Builder Field(label: Resource, value: string, onChange: (v: string) => void) {
     Row() {
-      Text(label).fontSize(16).fontColor($r('app.color.text_primary')).width(60)
+      Text(label).fontSize(18).fontColor($r('app.color.text_primary')).width(60)
       TextInput({ text: value })
-        .fontSize(16)
+        .fontSize(18)
         .fontColor($r('app.color.text_primary'))
         .placeholderColor($r('app.color.text_placeholder'))
         .backgroundColor(Color.Transparent)
+        .padding({ left: 0, right: 0 })
         .layoutWeight(1)
         .onChange(onChange)
     }
@@ -112,7 +113,7 @@ struct EditPage {
         this.NavButton($r('app.media.nav_close'), () => this.getUIContext().getRouter().back())
         Text(this.isEdit ? $r('app.string.edit_title') : $r('app.string.add_title'))
           .fontSize(20)
-          .fontWeight(FontWeight.Medium)
+          .fontWeight(FontWeight.Bolder)
           .fontColor($r('app.color.text_primary'))
           .margin({ left: 8 })
           .layoutWeight(1)
@@ -126,7 +127,7 @@ struct EditPage {
       Column() {
         Image($r('app.media.edit_avatar')).width(80).height(80)
       }
-      .margin({ top: 24, bottom: 32 })
+      .margin({ top: 64, bottom: 64 })
 
       Column() {
         this.Field($r('app.string.label_name'), this.account.name, (v: string) => { this.account.name = v; })
@@ -134,7 +135,7 @@ struct EditPage {
       }
       .padding({ top: 4, bottom: 4 })
       .backgroundColor($r('app.color.bg_card'))
-      .borderRadius(16)
+      .borderRadius(20)
       .margin({ left: 8, right: 8, bottom: 8 })
 
       Column() {
@@ -142,14 +143,14 @@ struct EditPage {
       }
       .padding({ top: 4, bottom: 4 })
       .backgroundColor($r('app.color.bg_card'))
-      .borderRadius(16)
+      .borderRadius(20)
       .margin({ left: 8, right: 8, bottom: 8 })
 
       Column() {
         Row() {
-          Text($r('app.string.label_type')).fontSize(16).fontColor($r('app.color.text_primary')).width(60)
+          Text($r('app.string.label_type')).fontSize(18).fontColor($r('app.color.text_primary')).width(60)
           Text(this.account.type === OtpType.TOTP ? $r('app.string.type_totp') : $r('app.string.type_hotp'))
-            .fontSize(16)
+            .fontSize(18)
             .fontColor($r('app.color.text_secondary'))
             .layoutWeight(1)
             .textAlign(TextAlign.End)
@@ -161,7 +162,7 @@ struct EditPage {
       }
       .padding({ top: 4, bottom: 4 })
       .backgroundColor($r('app.color.bg_card'))
-      .borderRadius(16)
+      .borderRadius(20)
       .margin({ left: 8, right: 8 })
     }.width('100%').height('100%')
   }

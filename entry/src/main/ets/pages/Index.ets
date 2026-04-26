@@ -164,7 +164,7 @@ struct Index {
   @Builder PageBody() {
     Stack() {
       Column() {
-        SearchBar({ query: $query }).margin({ left: 16, right: 16, top: 16, bottom: 8 })
+        SearchBar({ query: $query }).margin({ left: 24, right: 24, top: 64, bottom: 16 })
 
         if (this.accounts.length === 0) {
           Column() {
@@ -191,7 +191,7 @@ struct Index {
             }, (a: OtpAccount) => a.id)
           }
           .layoutWeight(1)
-          .padding({ left: 16, right: 16, bottom: 16 })
+          .padding({ left: 8, right: 8, bottom: 16 })
         }
       }.width('100%').height('100%').backgroundColor($r('app.color.bg_app'))
 
@@ -207,19 +207,19 @@ struct Index {
               this.getUIContext().getRouter().pushUrl({ url: 'pages/ScanPage' });
             }
           })
-            .margin({ bottom: 8, right: 16 })
+            .margin({ bottom: 12 })
         }
         Image($r('app.media.fab_add'))
           .width(56).height(56)
           .onClick(() => { this.plusOpen = !this.plusOpen; })
       }
-      .position({ right: 16, bottom: 32 })
+      .position({ right: 24, bottom: 24 })
       .alignItems(HorizontalAlign.End)
 
       if (this.toastVisible) {
         Column() {
           CopyToast({ visible: this.toastVisible })
-        }.position({ bottom: 120 }).width('100%').alignItems(HorizontalAlign.Center)
+        }.position({ bottom: 24 }).width('100%').alignItems(HorizontalAlign.Center)
       }
     }
     .width('100%').height('100%')
