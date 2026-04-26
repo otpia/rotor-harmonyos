@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E7EEFC"/>
+      <stop offset="1" stop-color="#F4F6FA"/>
+    </linearGradient>
+    <linearGradient id="iconBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3F86FF"/>
+      <stop offset="1" stop-color="#0A59F7"/>
+    </linearGradient>
+    <radialGradient id="iconGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="iconShadow" x="-30%" y="-20%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="22"/>
+      <feOffset dx="0" dy="20"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.28"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1080" height="1920" fill="url(#bg)"/>
+
+  <g filter="url(#iconShadow)" transform="translate(380 360)">
+    <path d="M160 0 C260 0 320 60 320 160 C320 260 260 320 160 320 C60 320 0 260 0 160 C0 60 60 0 160 0 Z" fill="url(#iconBg)"/>
+    <g transform="translate(160 160)">
+      <g opacity="0.9">
+        <rect x="-78" y="-22" width="156" height="44" rx="22" fill="#FFFFFF"/>
+        <rect x="-78" y="-22" width="156" height="44" rx="22" fill="#FFFFFF" transform="rotate(60)"/>
+        <rect x="-78" y="-22" width="156" height="44" rx="22" fill="#FFFFFF" transform="rotate(120)"/>
+      </g>
+      <circle cx="0" cy="0" r="56" fill="url(#iconGlow)"/>
+    </g>
+  </g>
+
+  <text x="540" y="800" text-anchor="middle"
+        font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
+        font-size="120" font-weight="800" fill="#0F1B2D">Rotor</text>
+  <text x="540" y="900" text-anchor="middle"
+        font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
+        font-size="44" font-weight="500" fill="#3D4759"
+        letter-spacing="2">本地优先的双因素动态验证码</text>
+
+  <g transform="translate(0 1080)">
+    <g transform="translate(180 0)">
+      <rect x="0" y="0" width="240" height="92" rx="46" fill="#FFFFFF" stroke="#D5DEEC" stroke-width="2"/>
+      <text x="120" y="60" text-anchor="middle"
+            font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
+            font-size="36" font-weight="600" fill="#0A59F7">RFC 6238</text>
+    </g>
+    <g transform="translate(440 0)">
+      <rect x="0" y="0" width="200" height="92" rx="46" fill="#FFFFFF" stroke="#D5DEEC" stroke-width="2"/>
+      <text x="100" y="60" text-anchor="middle"
+            font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
+            font-size="36" font-weight="600" fill="#0A59F7">本地存储</text>
+    </g>
+    <g transform="translate(660 0)">
+      <rect x="0" y="0" width="240" height="92" rx="46" fill="#FFFFFF" stroke="#D5DEEC" stroke-width="2"/>
+      <text x="120" y="60" text-anchor="middle"
+            font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
+            font-size="36" font-weight="600" fill="#0A59F7">无需联网</text>
+    </g>
+  </g>
+
+  <text x="540" y="1380" text-anchor="middle"
+        font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
+        font-size="56" font-weight="700" fill="#0F1B2D" letter-spacing="3">为 HarmonyOS 而生</text>
+  <text x="540" y="1460" text-anchor="middle"
+        font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
+        font-size="34" font-weight="400" fill="#5A6478" letter-spacing="2">秘钥仅保存在本机系统级凭据库</text>
+
+  <g transform="translate(390 1620)">
+    <rect x="0" y="0" width="300" height="120" rx="60" fill="#0A59F7"/>
+    <text x="150" y="78" text-anchor="middle"
+          font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
+          font-size="44" font-weight="700" fill="#FFFFFF">立即开启</text>
+  </g>
+</svg>
