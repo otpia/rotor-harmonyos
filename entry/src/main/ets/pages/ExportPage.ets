@@ -6,6 +6,7 @@ import { OtpAccountStore } from '../services/OtpAccountStore';
 import { SecretVault } from '../services/SecretVault';
 import { encryptBackup, BackupFile } from '../utils/BackupCrypto';
 import { PageContainer } from '../components/PageContainer';
+import { PasswordDialog } from '../components/PasswordDialog';
 
 interface BackupAccount {
   name: string;
@@ -28,9 +29,17 @@ interface BackupPlain {
 struct ExportPage {
   @State accounts: OtpAccount[] = [];
   @State selected: Record<string, boolean> = {};
-  @State password: string = '';
-  @State password2: string = '';
   @State busy: boolean = false;
+
+  passwordDialog: CustomDialogController = new CustomDialogController({
+    builder: PasswordDialog({
+      title: $r('app.string.export_password_hint'),
+      needConfirm: true,
+      onSubmit: (pwd: string) => this.runExport(pwd)
+    }),
+    alignment: DialogAlignment.Bottom,
+    customStyle: true
+  });
 
   aboutToAppear(): void {
     this.load();
@@ -41,7 +50,7 @@ struct ExportPage {
       const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
       this.accounts = await OtpAccountStore.listAll(ctx);
       const sel: Record<string, boolean> = {};
-      for (const a of this.accounts) sel[a.id] = true;
+      for (const a of this.accounts) sel[a.id] = false;
       this.selected = sel;
     } catch (e) {
       console.error('[ExportPage.load]', e);
@@ -52,6 +61,11 @@ struct ExportPage {
     const next: Record<string, boolean> = {};
     for (const a of this.accounts) next[a.id] = value;
     this.selected = next;
+  }
+
+  private toggleAll(): void {
+    const allOn = this.accounts.length > 0 && this.selectedCount() === this.accounts.length;
+    this.setAll(!allOn);
   }
 
   private selectedCount(): number {
@@ -67,17 +81,17 @@ struct ExportPage {
     this.selected = next;
   }
 
-  private async doExport(): Promise<void> {
+  private openExport(): void {
     if (this.busy) return;
-    if (this.password.length < 6) {
-      this.toast('密码至少 6 位');
+    if (this.selectedCount() === 0) {
+      this.toast('请至少选择一个账号');
       return;
     }
-    if (this.password !== this.password2) {
-      this.toast('两次密码不一致');
-      return;
-    }
-    if (this.selectedCount() === 0) return;
+    this.passwordDialog.open();
+  }
+
+  private async runExport(password: string): Promise<void> {
+    if (this.busy) return;
     try {
       this.busy = true;
       const items: BackupAccount[] = [];
@@ -98,7 +112,7 @@ struct ExportPage {
         });
       }
       const plain: BackupPlain = { accounts: items };
-      const file: BackupFile = await encryptBackup(this.password, JSON.stringify(plain));
+      const file: BackupFile = await encryptBackup(password, JSON.stringify(plain));
       const json = JSON.stringify(file);
 
       const docPicker = new picker.DocumentViewPicker();
@@ -127,7 +141,7 @@ struct ExportPage {
       this.toast(`已导出 ${items.length} 个账号`);
       this.getUIContext().getRouter().back();
     } catch (e) {
-      console.error('[ExportPage.doExport]', e);
+      console.error('[ExportPage.runExport]', e);
       this.toast('导出失败');
     } finally {
       this.busy = false;
@@ -142,37 +156,64 @@ struct ExportPage {
     }
   }
 
-  @Builder NavButton(icon: Resource, onTap: () => void) {
+  @Builder NavBack(onTap: () => void) {
     Stack() {
-      Image(icon).width(24).height(24)
+      Image($r('app.media.nav_back')).width(24).height(24)
     }
     .width(40).height(40)
-    .borderRadius(20)
-    .backgroundColor($r('app.color.bg_button'))
+    .onClick(onTap)
+  }
+
+  @Builder ToolbarButton(icon: Resource, label: ResourceStr, onTap: () => void) {
+    Column() {
+      Image(icon).width(24).height(24)
+      Text(label)
+        .fontSize(10)
+        .fontWeight(FontWeight.Medium)
+        .fontColor($r('app.color.text_primary'))
+        .margin({ top: 0 })
+    }
+    .width(80).height(62)
+    .justifyContent(FlexAlign.Center)
     .onClick(onTap)
   }
 
   @Builder AccountRow(a: OtpAccount) {
     Row() {
       Column() {
-        Text(a.name).fontSize(16).fontColor($r('app.color.text_primary')).fontWeight(FontWeight.Medium)
+        Text(a.name)
+          .fontSize(18)
+          .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_primary'))
         if (a.note) {
-          Text(a.note).fontSize(13).fontColor($r('app.color.text_secondary')).margin({ top: 2 })
+          Text(a.note)
+            .fontSize(14)
+            .fontColor($r('app.color.text_secondary'))
+            .margin({ top: 2 })
         }
-      }.alignItems(HorizontalAlign.Start).layoutWeight(1)
-      Toggle({ type: ToggleType.Checkbox, isOn: this.selected[a.id] === true })
+      }
+      .alignItems(HorizontalAlign.Start).layoutWeight(1)
+
+      Checkbox()
+        .select(this.selected[a.id] === true)
         .selectedColor($r('app.color.accent_blue'))
+        .shape(CheckBoxShape.ROUNDED_SQUARE)
+        .width(20).height(20)
         .onChange((on: boolean) => this.toggleOne(a.id, on))
     }
     .width('100%')
-    .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+    .height(78)
+    .padding({ left: 24, right: 24 })
     .alignItems(VerticalAlign.Center)
+    .backgroundColor($r('app.color.bg_card'))
+    .borderRadius(20)
+    .onClick(() => this.toggleOne(a.id, !this.selected[a.id]))
   }
 
   @Builder PageBody() {
     Column() {
       Row() {
-        this.NavButton($r('app.media.nav_close'), () => this.getUIContext().getRouter().back())
+        this.NavBack(() => this.getUIContext().getRouter().back())
         Text($r('app.string.export_title'))
           .fontSize(20)
           .fontWeight(FontWeight.Bolder)
@@ -185,58 +226,32 @@ struct ExportPage {
       .padding({ left: 16, right: 16 })
       .alignItems(VerticalAlign.Center)
 
-      Row() {
-        Text($r('app.string.export_select_hint'))
-          .fontSize(14).fontColor($r('app.color.text_secondary'))
-          .layoutWeight(1)
-        Text($r('app.string.select_all')).fontSize(14).fontColor($r('app.color.accent_blue'))
-          .padding({ left: 8, right: 8 })
-          .onClick(() => this.setAll(true))
-        Text($r('app.string.select_none')).fontSize(14).fontColor($r('app.color.accent_blue'))
-          .padding({ left: 8, right: 8 })
-          .onClick(() => this.setAll(false))
-      }.padding({ left: 24, right: 16, top: 8, bottom: 8 }).width('100%')
+      Text(`已选择 ${this.selectedCount()} 项`)
+        .fontSize(32)
+        .fontWeight(FontWeight.Medium)
+        .fontColor($r('app.color.text_primary'))
+        .width('100%')
+        .padding({ left: 24, right: 24, top: 8, bottom: 16 })
 
       Scroll() {
-        Column() {
+        Column({ space: 8 }) {
           ForEach(this.accounts, (a: OtpAccount) => {
             this.AccountRow(a)
           }, (a: OtpAccount) => a.id)
         }
-        .backgroundColor($r('app.color.bg_card'))
-        .borderRadius(20)
-        .margin({ left: 24, right: 24, bottom: 16 })
+        .padding({ left: 24, right: 24, bottom: 16 })
       }
       .layoutWeight(1)
       .scrollBar(BarState.Off)
 
-      Column() {
-        TextInput({ placeholder: $r('app.string.export_password_hint'), text: this.password })
-          .type(InputType.Password).fontSize(16).backgroundColor(Color.Transparent)
-          .placeholderColor($r('app.color.text_placeholder'))
-          .padding({ left: 0, right: 0 })
-          .height(50)
-          .onChange((v: string) => { this.password = v; })
-        Divider().color($r('app.color.divider'))
-        TextInput({ placeholder: $r('app.string.export_password_confirm'), text: this.password2 })
-          .type(InputType.Password).fontSize(16).backgroundColor(Color.Transparent)
-          .placeholderColor($r('app.color.text_placeholder'))
-          .padding({ left: 0, right: 0 })
-          .height(50)
-          .onChange((v: string) => { this.password2 = v; })
+      Row() {
+        this.ToolbarButton($r('app.media.toolbar_export'), $r('app.string.menu_export_short'), () => this.openExport())
+        this.ToolbarButton($r('app.media.toolbar_select_all'), $r('app.string.menu_select_all_short'), () => this.toggleAll())
       }
-      .backgroundColor($r('app.color.bg_card'))
-      .borderRadius(20)
-      .padding({ left: 24, right: 24 })
-      .margin({ left: 24, right: 24, bottom: 16 })
-
-      Button($r('app.string.export_btn_save'))
-        .backgroundColor($r('app.color.accent_blue'))
-        .fontColor(Color.White).fontSize(18).fontWeight(FontWeight.Medium)
-        .height(48).width('80%').borderRadius(24)
-        .margin({ bottom: 24 })
-        .enabled(!this.busy && this.selectedCount() > 0)
-        .onClick(() => this.doExport())
+      .width('100%')
+      .height(62)
+      .justifyContent(FlexAlign.Center)
+      .backgroundColor($r('app.color.bg_app'))
     }.width('100%').height('100%')
   }
 
