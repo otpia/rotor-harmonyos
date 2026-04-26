@@ -8,12 +8,19 @@ export struct OtpItem {
   @Prop account: OtpAccount;
   @Prop code: string = '------';
   @Prop remaining: number = 30;
-  @Prop highlighted: boolean = false;
   onTap?: () => void;
   onRefresh?: () => void;
 
   private codeColor(): Resource {
     return this.remaining < 6 ? $r('app.color.accent_red') : $r('app.color.text_primary');
+  }
+
+  @Styles cardNormal() {
+    .backgroundColor($r('app.color.bg_card'))
+  }
+
+  @Styles cardPressed() {
+    .backgroundColor($r('app.color.bg_card_active'))
   }
 
   build() {
@@ -59,9 +66,9 @@ export struct OtpItem {
         .width('100%')
     }
     .padding({ left: 24, right: 24, top: 16, bottom: 16 })
-    .backgroundColor(this.highlighted ? $r('app.color.bg_card_active') : $r('app.color.bg_card'))
     .borderRadius(20)
     .width('100%')
+    .stateStyles({ normal: this.cardNormal, pressed: this.cardPressed })
     .onClick(() => { if (this.onTap) this.onTap(); })
   }
 }

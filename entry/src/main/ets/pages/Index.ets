@@ -25,7 +25,6 @@ struct Index {
   @State codes: Record<string, CodeState> = {};
   @State secrets: Record<string, string> = {};
   @State query: string = '';
-  @State activeId: string = '';
   @State toastVisible: boolean = false;
   @State plusOpen: boolean = false;
   @State moreOpen: boolean = false;
@@ -135,12 +134,8 @@ struct Index {
       if (!c) return;
       const data = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, c.code);
       await pasteboard.getSystemPasteboard().setData(data);
-      this.activeId = a.id;
       this.toastVisible = true;
-      setTimeout(() => {
-        this.toastVisible = false;
-        this.activeId = '';
-      }, 1500);
+      setTimeout(() => { this.toastVisible = false; }, 1500);
     } catch (e) {
       console.error('[Index.copy]', e);
     }
@@ -228,7 +223,6 @@ struct Index {
                   account: a,
                   code: this.codes[a.id] ? this.codes[a.id].code : '------',
                   remaining: this.codes[a.id] ? this.codes[a.id].remaining : a.period,
-                  highlighted: this.activeId === a.id,
                   onTap: () => this.copy(a),
                   onRefresh: () => this.refreshHotp(a)
                 })
