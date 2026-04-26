@@ -28,18 +28,13 @@ export struct ProgressRing {
 
   build() {
     Stack() {
-      // 底层：完整深色环
-      Progress({ value: this.period, total: this.period, type: ProgressType.Ring })
+      // 仅画剩余时间弧体；scale x=-1 让缺口从 12 点起顺时针扩张
+      Progress({ value: this.remaining, total: this.period, type: ProgressType.Ring })
         .width(36).height(36)
         .style({ strokeWidth: 3, enableSmoothEffect: false })
         .backgroundColor(Color.Transparent)
         .color(this.color())
-      // 顶层：用卡片背景色覆盖「已消耗」段，使缺口从 12 点起顺时针扩张
-      Progress({ value: this.period - this.remaining, total: this.period, type: ProgressType.Ring })
-        .width(36).height(36)
-        .style({ strokeWidth: 3, enableSmoothEffect: false })
-        .backgroundColor(Color.Transparent)
-        .color(Color.White)
+        .scale({ x: -1, y: 1 })
     }
     .width(40).height(40)
   }
