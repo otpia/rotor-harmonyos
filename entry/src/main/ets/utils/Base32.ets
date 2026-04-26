@@ -35,3 +35,22 @@ export function isValidBase32(input: string): boolean {
     return false;
   }
 }
+
+export function base32Encode(bytes: Uint8Array): string {
+  if (bytes.length === 0) return '';
+  let out = '';
+  let buffer = 0;
+  let bits = 0;
+  for (let i = 0; i < bytes.length; i++) {
+    buffer = (buffer << 8) | bytes[i];
+    bits += 8;
+    while (bits >= 5) {
+      bits -= 5;
+      out += ALPHABET.charAt((buffer >> bits) & 0x1f);
+    }
+  }
+  if (bits > 0) {
+    out += ALPHABET.charAt((buffer << (5 - bits)) & 0x1f);
+  }
+  return out;
+}
