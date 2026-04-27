@@ -3,6 +3,7 @@ export struct DeleteConfirmDialog {
   controller: CustomDialogController;
   name: string = '';
   onConfirm?: () => void;
+  onCancel?: () => void;
 
   build() {
     Column() {
@@ -21,7 +22,10 @@ export struct DeleteConfirmDialog {
           .textAlign(TextAlign.Center)
           .height(48)
           .layoutWeight(1)
-          .onClick(() => this.controller.close())
+          .onClick(() => {
+            this.controller.close();
+            if (this.onCancel) this.onCancel();
+          })
         Divider()
           .vertical(true)
           .color($r('app.color.divider'))

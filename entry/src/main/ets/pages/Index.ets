@@ -38,6 +38,7 @@ struct Index {
   private pendingDeleteId: string = '';
   private pendingImportUri: string = '';
   private unsubTick: (() => void) | null = null;
+  private listScroller: ListScroller = new ListScroller();
 
   deleteDialog: CustomDialogController = new CustomDialogController({
     builder: DeleteConfirmDialog({
@@ -164,8 +165,10 @@ struct Index {
     this.deleteDialog = new CustomDialogController({
       builder: DeleteConfirmDialog({
         name: a.name,
-        onConfirm: () => this.confirmDelete()
+        onConfirm: () => this.confirmDelete(),
+        onCancel: () => this.listScroller.closeAllSwipeActions()
       }),
+      cancel: () => this.listScroller.closeAllSwipeActions(),
       alignment: DialogAlignment.Bottom,
       customStyle: true,
       maskColor: $r('app.color.scrim')
@@ -311,7 +314,7 @@ struct Index {
               .fontColor($r('app.color.text_secondary')).fontSize(14)
           }.layoutWeight(1).justifyContent(FlexAlign.Center).width('100%')
         } else {
-          List({ space: 12 }) {
+          List({ space: 12, scroller: this.listScroller }) {
             ForEach(this.filtered(), (a: OtpAccount) => {
               ListItem() {
                 OtpItem({
@@ -382,7 +385,11 @@ struct Index {
       if (this.toastVisible) {
         Column() {
           CopyToast({ visible: this.toastVisible })
-        }.position({ bottom: 24 }).width('100%').alignItems(HorizontalAlign.Center)
+        }
+        .position({ bottom: 24 })
+        .width('100%')
+        .alignItems(HorizontalAlign.Center)
+        .hitTestBehavior(HitTestMode.Transparent)
       }
     }
     .width('100%').height('100%')
