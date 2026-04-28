@@ -83,9 +83,11 @@ struct EditPage {
     }
   }
 
-  @Builder NavButton(icon: Resource, onTap: () => void) {
+  @Builder NavButton(symbol: Resource, onTap: () => void) {
     Stack() {
-      Image(icon).width(24).height(24)
+      SymbolGlyph(symbol)
+        .fontSize(24)
+        .fontColor([$r('app.color.text_primary')])
     }
     .width(40).height(40)
     .onClick(onTap)
@@ -113,14 +115,14 @@ struct EditPage {
   @Builder PageBody() {
     Column() {
       Row() {
-        this.NavButton($r('app.media.nav_close'), () => this.getUIContext().getRouter().back())
+        this.NavButton($r('sys.symbol.xmark'), () => this.getUIContext().getRouter().back())
         Text(this.isEdit ? $r('app.string.edit_title') : $r('app.string.add_title'))
           .fontSize(20)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
           .margin({ left: 8 })
           .layoutWeight(1)
-        this.NavButton($r('app.media.nav_check'), () => this.save())
+        this.NavButton($r('sys.symbol.checkmark'), () => this.save())
       }
       .height(56)
       .width('100%')
@@ -157,7 +159,10 @@ struct EditPage {
             .fontColor($r('app.color.text_secondary'))
             .layoutWeight(1)
             .textAlign(TextAlign.End)
-          Image($r('app.media.chevron_right')).width(24).height(24).margin({ left: 8 })
+          SymbolGlyph($r('sys.symbol.chevron_right'))
+            .fontSize(24)
+            .fontColor([$r('app.color.text_secondary')])
+            .margin({ left: 8 })
         }
         .height(50)
         .padding({ left: 24, right: 24 })

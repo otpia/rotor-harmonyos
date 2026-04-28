@@ -22,9 +22,11 @@ struct AboutPage {
     }
   }
 
-  @Builder NavButton(icon: Resource, onTap: () => void) {
+  @Builder NavButton(symbol: Resource, onTap: () => void) {
     Stack() {
-      Image(icon).width(24).height(24)
+      SymbolGlyph(symbol)
+        .fontSize(24)
+        .fontColor([$r('app.color.text_primary')])
     }
     .width(40).height(40)
     .onClick(onTap)
@@ -33,7 +35,7 @@ struct AboutPage {
   @Builder PageBody() {
     Column() {
       Row() {
-        this.NavButton($r('app.media.nav_back'), () => this.getUIContext().getRouter().back())
+        this.NavButton($r('sys.symbol.arrow_left'), () => this.getUIContext().getRouter().back())
         Text($r('app.string.about_title'))
           .fontSize(20)
           .fontWeight(FontWeight.Bold)

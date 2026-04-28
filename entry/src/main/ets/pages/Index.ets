@@ -301,9 +301,14 @@ struct Index {
       Column() {
         Row() {
           Blank()
-          Image($r('app.media.more'))
-            .width(24).height(24)
-            .onClick(() => { this.moreOpen = !this.moreOpen; this.plusOpen = false; })
+          Stack() {
+            Circle({ width: 6, height: 6 }).fill($r('app.color.text_primary')).position({ x: 3, y: 3 })
+            Circle({ width: 6, height: 6 }).fill($r('app.color.text_primary')).position({ x: 15, y: 3 })
+            Circle({ width: 6, height: 6 }).fill($r('app.color.text_primary')).position({ x: 3, y: 15 })
+            Circle({ width: 6, height: 6 }).fill($r('app.color.text_primary')).position({ x: 15, y: 15 })
+          }
+          .width(24).height(24)
+          .onClick(() => { this.moreOpen = !this.moreOpen; this.plusOpen = false; })
         }.width('100%').height(56).padding({ left: 16, right: 16 })
 
         SearchBar({ query: $query }).margin({ left: 24, right: 24, top: 8, bottom: 16 })

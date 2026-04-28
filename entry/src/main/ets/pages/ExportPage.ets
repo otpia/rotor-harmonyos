@@ -235,15 +235,19 @@ struct ExportPage {
 
   @Builder NavBack(onTap: () => void) {
     Stack() {
-      Image($r('app.media.nav_back')).width(24).height(24)
+      SymbolGlyph($r('sys.symbol.arrow_left'))
+        .fontSize(24)
+        .fontColor([$r('app.color.text_primary')])
     }
     .width(40).height(40)
     .onClick(onTap)
   }
 
-  @Builder ToolbarButton(icon: Resource, label: ResourceStr, onTap: () => void) {
+  @Builder ToolbarButton(symbol: Resource, label: ResourceStr, onTap: () => void) {
     Column() {
-      Image(icon).width(24).height(24)
+      SymbolGlyph(symbol)
+        .fontSize(24)
+        .fontColor([$r('app.color.text_primary')])
       Text(label)
         .fontSize(10)
         .fontWeight(FontWeight.Medium)
@@ -257,9 +261,9 @@ struct ExportPage {
 
   @Builder ToolbarDeleteButton() {
     Column() {
-      // TODO: toolbar_delete.png 当前由 SVG 代码生成，sketch 无对应图层。设计师补 frame 后替换为 3x 导出
-      Image($r('app.media.toolbar_delete'))
-        .width(24).height(24)
+      SymbolGlyph($r('sys.symbol.trash'))
+        .fontSize(24)
+        .fontColor([$r('app.color.accent_red')])
         .opacity(this.selectedCount() > 0 ? 1 : 0.4)
       Text($r('app.string.btn_delete'))
         .fontSize(10)
@@ -343,8 +347,8 @@ struct ExportPage {
 
       Row() {
         this.ToolbarDeleteButton()
-        this.ToolbarButton($r('app.media.toolbar_export'), $r('app.string.menu_export_short'), () => this.openExport())
-        this.ToolbarButton($r('app.media.toolbar_select_all'), $r('app.string.menu_select_all_short'), () => this.toggleAll())
+        this.ToolbarButton($r('sys.symbol.share'), $r('app.string.menu_export_short'), () => this.openExport())
+        this.ToolbarButton($r('sys.symbol.list_checkmark'), $r('app.string.menu_select_all_short'), () => this.toggleAll())
       }
       .width('100%')
       .height(62)

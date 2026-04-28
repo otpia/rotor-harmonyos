@@ -19,7 +19,7 @@
 
 Rotor 是一款专为 HarmonyOS NEXT 打造的本地双因素动态验证码工具，遵循 RFC 6238 标准，与 Google Authenticator 等主流验证器完全兼容。
 
-· 本地优先：秘钥仅写入系统级凭据库（Asset Store Kit），与设备锁绑定，永不上云。
+· 本地优先：密钥仅写入系统级凭据库（Asset Store Kit），与设备锁绑定，永不上云。
 · 扫码秒加：扫描 otpauth:// 二维码一键导入，也可手动输入；新增、编辑、删除、搜索一目了然。
 · 30 秒一变：粗体大字号验证码配合圆环倒计时，过期前 6 秒自动高亮，不错过任何窗口。
 · 加密备份：AES-256 + PBKDF2-SHA256（200K 迭代）打包导出 .rotorbak 文件，自定义密码跨设备迁移；导入按 secret 自动去重。
@@ -44,18 +44,18 @@ Rotor 严格遵循"最小权限原则"，全应用仅申请 **1 项** 系统权�
 
 | 能力名 | 类型 | 导出 | 用途 |
 | --- | --- | --- | --- |
-| `EntryBackupAbility` | `BackupExtensionAbility`（`@kit.CoreFileKit`） | `exported: false`，仅系统可调用 | 参与 HarmonyOS 系统级"换机克隆 / 整机备份恢复"流程；由 `backup_config.json` 控制（当前 `allowToBackupRestore: true`）。账号元数据（应用沙箱内 SQLite）可随系统通道迁移；秘钥位于 Asset Store Kit 沙箱外，**不通过此通道迁移**，跨设备同步仍需使用应用内 `.rotorbak` 加密备份 |
+| `EntryBackupAbility` | `BackupExtensionAbility`（`@kit.CoreFileKit`） | `exported: false`，仅系统可调用 | 参与 HarmonyOS 系统级"换机克隆 / 整机备份恢复"流程；由 `backup_config.json` 控制（当前 `allowToBackupRestore: true`）。账号元数据（应用沙箱内 SQLite）可随系统通道迁移；密钥位于 Asset Store Kit 沙箱外，**不通过此通道迁移**，跨设备同步仍需使用应用内 `.rotorbak` 加密备份 |
 
 **未申请的能力（明确不需要）**
 
-- ❌ 网络（`INTERNET` / `GET_NETWORK_INFO`）：应用全程离线运行，秘钥与验证码不会上传任何服务器
+- ❌ 网络（`INTERNET` / `GET_NETWORK_INFO`）：应用全程离线运行，密钥与验证码不会上传任何服务器
 - ❌ 存储（`READ_MEDIA` / `WRITE_MEDIA`）：备份导入导出走系统文件选择器（CoreFileKit Picker），无需常驻存储权限
 - ❌ 位置、麦克风、通讯录、日历、通知等所有其他敏感权限均不申请
 
 **数据存储边界**
 
-- 秘钥（base32 原文）→ 系统级凭据库 **HarmonyOS Asset Store Kit**，与设备锁绑定，应用沙箱不可见
-- 账号元数据（名称、备注、算法参数等）→ 应用内 **关系型数据库（ArkData / SQLite）**，不含秘钥
+- 密钥（base32 原文）→ 系统级凭据库 **HarmonyOS Asset Store Kit**，与设备锁绑定，应用沙箱不可见
+- 账号元数据（名称、备注、算法参数等）→ 应用内 **关系型数据库（ArkData / SQLite）**，不含密钥
 - 加密备份文件（`.rotorbak`）→ 由用户在系统文件选择器中选定的位置，由用户自行管理
 
 ---
@@ -68,7 +68,7 @@ Rotor 严格遵循"最小权限原则"，全应用仅申请 **1 项** 系统权�
 | 2   | 列表与倒计时 | 30 秒一变 · 一目了然        | [02_list.png](assets/02_list.png)             |
 | 3   | 扫码秒加   | 扫码秒加 · 一键导入         | [03_scan.png](assets/03_scan.png)             |
 | 4   | 加密备份   | AES 加密备份 · 安心迁移     | [04_backup.png](assets/04_backup.png)         |
-| 5   | 隐私本地   | 秘钥 · 永不离开本机         | [05_privacy.png](assets/05_privacy.png)       |
+| 5   | 隐私本地   | 密钥 · 永不离开本机         | [05_privacy.png](assets/05_privacy.png)       |
 
 ### 预览
 

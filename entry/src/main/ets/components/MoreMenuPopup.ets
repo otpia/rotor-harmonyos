@@ -22,7 +22,7 @@ export struct MoreMenuPopup {
       this.Item($r('app.string.menu_about'), () => { if (this.onAbout) this.onAbout(); })
     }
     .padding({ top: 16, bottom: 16 })
-    .backgroundColor(Color.White)
+    .backgroundColor($r('app.color.bg_dialog'))
     .borderRadius(18)
     .width(180)
     .shadow({ radius: 12, color: '#1F000000', offsetY: 4 })

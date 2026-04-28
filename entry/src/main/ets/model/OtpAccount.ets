@@ -4,7 +4,7 @@ export enum OtpType {
   HOTP = 'hotp'
 }
 
-// 账号元数据；秘钥不在此结构中，仅存于 Asset Kit
+// 账号元数据；密钥不在此结构中，仅存于 Asset Kit
 export interface OtpAccount {
   id: string;
   name: string;

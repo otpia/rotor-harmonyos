@@ -19,7 +19,7 @@ export struct PlusMenuPopup {
       this.Item($r('app.string.menu_scan_qr'), () => { if (this.onScanQr) this.onScanQr(); })
     }
     .padding({ top: 16, bottom: 16 })
-    .backgroundColor(Color.White)
+    .backgroundColor($r('app.color.bg_dialog'))
     .borderRadius(18)
     .width(180)
     .shadow({ radius: 12, color: '#1F000000', offsetY: 4 })
