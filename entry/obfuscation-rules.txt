@@ -17,6 +17,10 @@
 # -keep-property-name: specifies property names that you want to keep
 # -keep-global-name: specifies names that you want to keep in the global scope
 
+# 启用混淆 pipeline 但暂时禁用所有规则；上架前再按需打开并补 keep 规则
+# -disable-obfuscation
+
+# 上架前启用以下规则（启用后必须全量回归 OTP 生成 / 扫码 / 导入导出 / Asset Kit）：
 -enable-property-obfuscation
 -enable-toplevel-obfuscation
 -enable-filename-obfuscation
