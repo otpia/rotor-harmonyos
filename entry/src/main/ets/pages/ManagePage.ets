@@ -1,8 +1,8 @@
 import { common } from '@kit.AbilityKit';
 import { fileIo, picker } from '@kit.CoreFileKit';
 import { util } from '@kit.ArkTS';
-import { ItemState, SymbolGlyphModifier, ToolBar, ToolBarOptions, uiMaterial } from '@kit.ArkUI';
-import { HdsNavDestination, hdsMaterial, ScrollEffectType } from '@kit.UIDesignKit';
+import { uiMaterial } from '@kit.ArkUI';
+import { HdsNavDestination, HdsTabs, HdsTabsController, hdsMaterial, ScrollEffectType } from '@kit.UIDesignKit';
 import { OtpAccount } from '../model/OtpAccount';
 import { OtpAccountStore } from '../services/OtpAccountStore';
 import { SecretVault } from '../services/SecretVault';
@@ -27,6 +27,9 @@ interface BackupPlain {
   accounts: BackupAccount[];
 }
 
+// 悬浮栏高度加留白，列表末尾预留
+const LIST_END_OFFSET = 108;
+
 // 多选编辑页：批量删除与加密导出
 @Component
 export struct ManagePage {
@@ -37,6 +40,7 @@ export struct ManagePage {
   @State pwdSheetOpen: boolean = false;
   @StorageProp('bottomSafeAreaPx') bottomSafeAreaPx: number = 0;
   private scroller: Scroller = new Scroller();
+  private tabsController: HdsTabsController = new HdsTabsController();
 
   aboutToAppear(): void {
     this.load();
@@ -246,46 +250,53 @@ export struct ManagePage {
     }
   }
 
-  // 底部工具栏；选中数为 0 时删除与导出置灰，列表随选中数变化重建以刷新状态
-  private toolbarList(): ToolBarOptions {
-    const disabled = this.selectedCount() === 0;
-    const list = new ToolBarOptions();
-    list.push({
-      content: $r('app.string.btn_delete'),
-      toolBarSymbolOptions: { normal: new SymbolGlyphModifier($r('sys.symbol.trash')) },
-      state: disabled ? ItemState.DISABLE : ItemState.ENABLE,
-      action: () => {
-        this.askDelete();
-      }
-    });
-    list.push({
-      content: $r('app.string.menu_export_short'),
-      toolBarSymbolOptions: { normal: new SymbolGlyphModifier($r('sys.symbol.share')) },
-      state: disabled ? ItemState.DISABLE : ItemState.ENABLE,
-      action: () => {
-        this.openExport();
-      }
-    });
-    list.push({
-      content: $r('app.string.menu_select_all_short'),
-      toolBarSymbolOptions: { normal: new SymbolGlyphModifier($r('sys.symbol.list_checkmark')) },
-      action: () => {
-        this.toggleAll();
-      }
-    });
-    return list;
+  // 底部悬浮栏项：与首页同款胶囊；置灰状态直接读选中数，保证响应式刷新
+  @Builder BarIcon(icon: Resource, label: Resource) {
+    SymbolGlyph(icon)
+      .fontSize(24)
+      .fontColor([$r('sys.color.icon_primary')])
+    Text(label)
+      .fontSize($r('sys.float.Caption_M'))
+      .fontColor($r('sys.color.font_primary'))
+      .margin({ top: 2 })
   }
 
-  @Builder BottomToolbar() {
+  @Builder DeleteTab() {
     Column() {
-      if (this.selectedCount() > 0) {
-        ToolBar({ toolBarList: this.toolbarList(), activateIndex: -1 })
-      } else {
-        ToolBar({ toolBarList: this.toolbarList(), activateIndex: -1 })
-      }
+      this.BarIcon($r('sys.symbol.trash'), $r('app.string.btn_delete'))
     }
     .width('100%')
-    .padding({ bottom: Math.max(this.getUIContext().px2vp(this.bottomSafeAreaPx), 16) })
+    .height('100%')
+    .justifyContent(FlexAlign.Center)
+    .opacity(this.selectedCount() > 0 ? 1 : 0.4)
+    .onClick(() => {
+      this.askDelete();
+    })
+  }
+
+  @Builder ExportTab() {
+    Column() {
+      this.BarIcon($r('sys.symbol.share'), $r('app.string.menu_export_short'))
+    }
+    .width('100%')
+    .height('100%')
+    .justifyContent(FlexAlign.Center)
+    .opacity(this.selectedCount() > 0 ? 1 : 0.4)
+    .onClick(() => {
+      this.openExport();
+    })
+  }
+
+  @Builder SelectAllTab() {
+    Column() {
+      this.BarIcon($r('sys.symbol.list_checkmark'), $r('app.string.menu_select_all_short'))
+    }
+    .width('100%')
+    .height('100%')
+    .justifyContent(FlexAlign.Center)
+    .onClick(() => {
+      this.toggleAll();
+    })
   }
 
   @Builder PwdSheet() {
@@ -337,34 +348,58 @@ export struct ManagePage {
 
   build() {
     HdsNavDestination() {
-      Column() {
-        List({ space: 12, scroller: this.scroller }) {
-          ForEach(this.accounts, (a: OtpAccount) => {
-            ListItem() {
-              this.AccountRow(a)
-            }
-            .onClick(() => this.toggleOne(a.id, !this.selected[a.id]))
-          }, (a: OtpAccount) => a.id)
+      HdsTabs({ controller: this.tabsController }) {
+        TabContent() {
+          List({ space: 12, scroller: this.scroller }) {
+            ForEach(this.accounts, (a: OtpAccount) => {
+              ListItem() {
+                this.AccountRow(a)
+              }
+              .onClick(() => this.toggleOne(a.id, !this.selected[a.id]))
+            }, (a: OtpAccount) => a.id)
+          }
+          .width('100%')
+          .height('100%')
+          .padding({ left: 16, right: 16 })
+          .scrollBar(BarState.Off)
+          .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+          .contentEndOffset(LIST_END_OFFSET)
+          .clipContent(ContentClipMode.SAFE_AREA)
+          .bindSheet($$this.pwdSheetOpen, this.PwdSheet(), {
+            systemMaterial: new uiMaterial.ImmersiveMaterial({ style: uiMaterial.ImmersiveStyle.ULTRA_THICK }),
+            detents: [SheetSize.FIT_CONTENT],
+            title: { title: $r('app.string.export_password_hint') },
+            showClose: true,
+            preferType: SheetType.BOTTOM
+          })
         }
-        .width('100%')
-        .layoutWeight(1)
-        .padding({ left: 16, right: 16 })
-        .scrollBar(BarState.Off)
-        .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
-        .contentEndOffset(16)
-        .clipContent(ContentClipMode.SAFE_AREA)
-        .bindSheet($$this.pwdSheetOpen, this.PwdSheet(), {
-          systemMaterial: new uiMaterial.ImmersiveMaterial({ style: uiMaterial.ImmersiveStyle.ULTRA_THICK }),
-          detents: [SheetSize.FIT_CONTENT],
-          title: { title: $r('app.string.export_password_hint') },
-          showClose: true,
-          preferType: SheetType.BOTTOM
-        })
+        .tabBar(this.DeleteTab())
 
-        this.BottomToolbar()
+        TabContent() {
+          Column()
+        }
+        .tabBar(this.ExportTab())
+
+        TabContent() {
+          Column()
+        }
+        .tabBar(this.SelectAllTab())
       }
       .width('100%')
       .height('100%')
+      .barOverlap(true)
+      .vertical(false)
+      .barPosition(BarPosition.End)
+      .scrollable(false)
+      .barFloatingStyle({
+        adaptToHandedness: true,
+        barBottomMargin: this.bottomSafeAreaPx > 0 ? this.getUIContext().px2vp(this.bottomSafeAreaPx) : 16,
+        systemMaterialEffect: {
+          materialType: hdsMaterial.MaterialType.ADAPTIVE,
+          materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+        }
+      })
+      .onContentWillChange((_current: number, _coming: number) => false)
     }
     .backgroundColor($r('sys.color.background_secondary'))
     .titleBar({
@@ -388,6 +423,6 @@ export struct ManagePage {
       enableComponentSafeArea: true
     })
     .bindToScrollable([this.scroller])
-    .ignoreLayoutSafeArea([LayoutSafeAreaType.SYSTEM], [LayoutSafeAreaEdge.TOP])
+    .ignoreLayoutSafeArea([LayoutSafeAreaType.SYSTEM], [LayoutSafeAreaEdge.TOP, LayoutSafeAreaEdge.BOTTOM])
   }
 }
