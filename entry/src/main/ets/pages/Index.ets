@@ -1,9 +1,9 @@
 import { pasteboard } from '@kit.BasicServicesKit';
 import { common } from '@kit.AbilityKit';
 import { picker } from '@kit.CoreFileKit';
-import { KeyboardAvoidMode, SymbolGlyphModifier } from '@kit.ArkUI';
+import { curves, KeyboardAvoidMode, SymbolGlyphModifier } from '@kit.ArkUI';
 import {
-  HdsBarStyle,
+  HdsAnimationMode,
   HdsNavigation,
   HdsNavigationTitleMode,
   HdsTabs,
@@ -46,6 +46,7 @@ struct Index {
   @State secrets: Record<string, string> = {};
   @State query: string = '';
   @State importSheetOpen: boolean = false;
+  @State searchMode: boolean = false;
   @StorageProp('bottomSafeAreaPx') bottomSafeAreaPx: number = 0;
   private listScroller: ListScroller = new ListScroller();
   private tabsController: HdsTabsController = new HdsTabsController();
@@ -375,31 +376,30 @@ struct Index {
 
   // ---------- 搜索 ----------
 
-  // 展开悬浮栏迷你栏里的搜索框并聚焦
-  private openSearch(): void {
+  // 悬浮栏收起，底部原位换成搜索框并聚焦
+  private enterSearch(): void {
+    this.searchMode = true;
     try {
-      this.tabsController.applyMiniBarStyle(HdsBarStyle.EXPAND);
+      this.tabsController.applyHideAnimation(HdsAnimationMode.CLICK_ANIMATION);
     } catch (e) {
-      console.error('[Index.openSearch] expand', e);
+      console.error('[Index.enterSearch] hide bar', e);
     }
     setTimeout(() => {
       try {
         this.getUIContext().getFocusController().requestFocus(SEARCH_ID);
       } catch (e) {
-        console.error('[Index.openSearch] focus', e);
+        console.error('[Index.enterSearch] focus', e);
       }
-    }, 300);
+    }, 200);
   }
 
-  // 失焦且无输入时折叠回搜索图标
-  private onSearchBlur(): void {
-    if (this.query.length > 0) {
-      return;
-    }
+  private exitSearch(): void {
+    this.query = '';
+    this.searchMode = false;
     try {
-      this.tabsController.applyMiniBarStyle(HdsBarStyle.COLLAPSE);
+      this.tabsController.applyShowAnimation(HdsAnimationMode.CLICK_ANIMATION);
     } catch (e) {
-      console.error('[Index.onSearchBlur]', e);
+      console.error('[Index.exitSearch] show bar', e);
     }
   }
 
@@ -460,41 +460,63 @@ struct Index {
       .margin({ top: 2 })
   }
 
-  @Builder SearchMiniBar() {
-    Row() {
-      Column() {
-        SymbolGlyph($r('sys.symbol.magnifyingglass'))
-          .fontSize(24)
-          .fontColor([$r('sys.color.icon_primary')])
-      }
-      .width(48)
-      .height(48)
-      .justifyContent(FlexAlign.Center)
-      .onClick(() => {
-        this.openSearch();
-      })
+  @Builder SearchTab() {
+    Column() {
+      this.BarIcon($r('sys.symbol.magnifyingglass'), $r('app.string.bar_search'))
+    }
+    .width('100%')
+    .height('100%')
+    .justifyContent(FlexAlign.Center)
+    .onClick(() => {
+      this.enterSearch();
+    })
+  }
 
+  // 搜索态：替代悬浮栏出现在底部，键盘弹出时随页面压缩贴在键盘上方
+  @Builder SearchBarRow() {
+    Row() {
       Search({ value: this.query, placeholder: $r('app.string.search_placeholder') })
         .id(SEARCH_ID)
         .height(40)
         .layoutWeight(1)
-        .margin({ right: 8 })
+        .backgroundColor(Color.Transparent)
         .onChange((v: string) => {
           this.query = v;
-        })
-        .onBlur(() => {
-          this.onSearchBlur();
         })
         .onSubmit(() => {
           try {
             this.getUIContext().getFocusController().clearFocus();
           } catch (e) {
-            console.error('[Index.SearchMiniBar] clearFocus', e);
+            console.error('[Index.SearchBarRow] clearFocus', e);
           }
         })
+      Button($r('app.string.btn_cancel'))
+        .buttonStyle(ButtonStyleMode.TEXTUAL)
+        .controlSize(ControlSize.SMALL)
+        .onClick(() => {
+          this.exitSearch();
+        })
     }
-    .height('100%')
+    .height(56)
+    .padding({ left: 8, right: 4 })
+    .margin({
+      left: 16,
+      right: 16,
+      bottom: Math.max(this.getUIContext().px2vp(this.bottomSafeAreaPx), 16)
+    })
+    .borderRadius(28)
+    .backgroundColor($r('sys.color.comp_background_list_card'))
+    .shadow(ShadowStyle.OUTER_DEFAULT_SM)
     .alignItems(VerticalAlign.Center)
+    .transition(TransitionEffect.asymmetric(
+      TransitionEffect.move(TransitionEdge.BOTTOM)
+        .combine(TransitionEffect.scale({ x: 0.85, y: 0.85 }))
+        .combine(TransitionEffect.opacity(0))
+        .animation({ curve: curves.interpolatingSpring(0, 1, 200, 17) }),
+      TransitionEffect.move(TransitionEdge.BOTTOM)
+        .combine(TransitionEffect.opacity(0))
+        .animation({ curve: curves.interpolatingSpring(0, 1, 170, 17) })
+    ))
   }
 
   @Builder AddTab() {
@@ -628,38 +650,45 @@ struct Index {
 
   build() {
     HdsNavigation(this.pathStack) {
-      HdsTabs({ controller: this.tabsController }) {
-        TabContent() {
-          this.ListArea()
-        }
-        .tabBar(this.AddTab())
+      Stack({ alignContent: Alignment.Bottom }) {
+        HdsTabs({ controller: this.tabsController }) {
+          TabContent() {
+            this.ListArea()
+          }
+          .tabBar(this.SearchTab())
 
-        TabContent() {
-          Column()
+          TabContent() {
+            Column()
+          }
+          .tabBar(this.AddTab())
+
+          TabContent() {
+            Column()
+          }
+          .tabBar(this.MoreTab())
         }
-        .tabBar(this.MoreTab())
+        .width('100%')
+        .height('100%')
+        .barOverlap(true)
+        .vertical(false)
+        .barPosition(BarPosition.End)
+        .scrollable(false)
+        .barFloatingStyle({
+          adaptToHandedness: true,
+          barBottomMargin: this.bottomSafeAreaPx > 0 ? this.getUIContext().px2vp(this.bottomSafeAreaPx) : 16,
+          systemMaterialEffect: {
+            materialType: hdsMaterial.MaterialType.ADAPTIVE,
+            materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+          }
+        })
+        .onContentWillChange((_current: number, _coming: number) => false)
+
+        if (this.searchMode) {
+          this.SearchBarRow()
+        }
       }
       .width('100%')
       .height('100%')
-      .barOverlap(true)
-      .vertical(false)
-      .barPosition(BarPosition.End)
-      .scrollable(false)
-      .barFloatingStyle({
-        adaptToHandedness: true,
-        barBottomMargin: this.bottomSafeAreaPx > 0 ? this.getUIContext().px2vp(this.bottomSafeAreaPx) : 16,
-        systemMaterialEffect: {
-          materialType: hdsMaterial.MaterialType.ADAPTIVE,
-          materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
-        },
-        miniBar: {
-          miniBarBuilder: () => {
-            this.SearchMiniBar();
-          },
-          miniBarStyle: HdsBarStyle.COLLAPSE
-        }
-      })
-      .onContentWillChange((_current: number, _coming: number) => false)
     }
     .mode(NavigationMode.Stack)
     .backgroundColor($r('sys.color.background_secondary'))

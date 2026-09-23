@@ -3,6 +3,7 @@
     { "name": "module_desc", "value": "Rotor module" },
     { "name": "EntryAbility_desc", "value": "Rotor authenticator" },
     { "name": "EntryAbility_label", "value": "Rotor" },
+    { "name": "bar_search", "value": "Search" },
     { "name": "bar_add", "value": "Add" },
     { "name": "bar_more", "value": "More" },
     { "name": "search_placeholder", "value": "Search" },

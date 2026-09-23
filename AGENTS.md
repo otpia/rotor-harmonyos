@@ -8,7 +8,7 @@
 - 视觉与交互按 HarmonyOS 官方 UI Design Kit（HDS 组件）与沉浸光感规范实现，不参考外部设计稿
 - 颜色、字号、圆角、间距一律用系统资源 `$r('sys.color.*')`、`$r('sys.float.*')`，不自定义颜色 token，深浅色由系统资源自动适配
 - 界面图标用 `SymbolGlyph($r('sys.symbol.*'))`；issuer 品牌图标为 `media` 下的 PNG，未命中时用 `IssuerAvatar` 首字母头像
-- 页面结构：`Index` 为 `HdsNavigation` 根，二级页为 `HdsNavDestination`，通过 `NavPathStack` 路由；首页标题栏只放大标题，操作全部收在 `HdsTabs` 悬浮栏（智感握姿跟手）：页签为「添加」「更多」，搜索放在悬浮栏的迷你栏里，折叠为图标、点开展开成输入框，失焦且无输入时折叠
+- 页面结构：`Index` 为 `HdsNavigation` 根，二级页为 `HdsNavDestination`，通过 `NavPathStack` 路由；首页标题栏只放大标题，操作全部收在 `HdsTabs` 悬浮栏（智感握姿跟手）一个胶囊里：「搜索」「添加」「更多」。点「搜索」时悬浮栏 `applyHideAnimation` 收起，底部原位以弹簧过渡（`curves.interpolatingSpring(0, 1, 200, 17)` 进、`170, 17` 出）弹出同形态的白色胶囊搜索框加「取消」，取消后 `applyShowAnimation` 恢复；不用 HdsTabs 迷你栏（它天生是挂在页签栏旁边的独立小圆，做不成一体）
 - 首页列表项用原生 `ListItem` 加 `swipeAction`（自绘 HDS 样式圆形按钮），不用 `HdsListItem`，否则 `ForEach.onMove` 长按拖拽排序失效
 - 首页 `UIContext.setKeyboardAvoidMode(RESIZE)`，键盘弹出时页面压缩而非上移，悬浮栏随之贴在键盘上方
 - 二级页返回首页的刷新统一走 `NavPathStack.setInterception.didShow`，不要依赖 `pushPathByName` 的 `onPop`（`pop(true)` 会匹配 `pop(animated)` 重载，不触发回调）
