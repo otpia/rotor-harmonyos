@@ -13,6 +13,7 @@
 - 首页 `UIContext.setKeyboardAvoidMode(RESIZE)`，键盘弹出时页面压缩而非上移，悬浮栏随之贴在键盘上方
 - 二级页返回首页的刷新统一走 `NavPathStack.setInterception.didShow`，不要依赖 `pushPathByName` 的 `onPop`（`pop(true)` 会匹配 `pop(animated)` 重载，不触发回调）
 - 弹窗一律用系统能力：`AlertDialog`、`bindMenu`、`bindSheet`、`Select`、`showToast`，不自绘弹窗
+- 沉浸光感：`module.json5` 已开应用级开关；弹出层再显式传 `systemMaterial`（菜单与 Toast 用 `ImmersiveStyle.THICK`，弹窗与半模态用 `ULTRA_THICK`）；所有 HDS 标题栏统一 `scrollEffectOpts` 为 `GRADIENT_BLUR` 加 `systemMaterialEffect` ADAPTIVE；`Select` 不要设 `backgroundColor`，否则默认材质失效
 
 ## 调试流程
 - 命令行编译前先设置环境。hvigor 取 PATH 里的 `java`，必须指向 DevEco 自带的 JBR：

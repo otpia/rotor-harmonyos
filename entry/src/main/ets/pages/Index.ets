@@ -1,7 +1,7 @@
 import { pasteboard } from '@kit.BasicServicesKit';
 import { common } from '@kit.AbilityKit';
 import { picker } from '@kit.CoreFileKit';
-import { curves, KeyboardAvoidMode, SymbolGlyphModifier } from '@kit.ArkUI';
+import { curves, KeyboardAvoidMode, SymbolGlyphModifier, uiMaterial } from '@kit.ArkUI';
 import {
   HdsAnimationMode,
   HdsNavigation,
@@ -36,6 +36,15 @@ const ROUTE_ABOUT = 'about';
 const SEARCH_ID = 'rotor_search_input';
 // 底部悬浮栏高度加留白，列表末尾预留，避免最后一项被遮挡
 const LIST_END_OFFSET = 108;
+
+// 弹出层沉浸式材质：菜单用厚材质并自动反色，弹窗与半模态用超厚材质
+function menuMaterial(): uiMaterial.ImmersiveMaterial {
+  return new uiMaterial.ImmersiveMaterial({ style: uiMaterial.ImmersiveStyle.THICK, colorInvert: true });
+}
+
+function dialogMaterial(): uiMaterial.ImmersiveMaterial {
+  return new uiMaterial.ImmersiveMaterial({ style: uiMaterial.ImmersiveStyle.ULTRA_THICK });
+}
 
 @Entry
 @Component
@@ -88,7 +97,7 @@ struct Index {
 
   private toast(msg: ResourceStr): void {
     try {
-      this.getUIContext().getPromptAction().showToast({ message: msg });
+      this.getUIContext().getPromptAction().showToast({ message: msg, systemMaterial: menuMaterial() });
     } catch (e) {
       console.error('[Index.toast]', e);
     }
@@ -244,6 +253,7 @@ struct Index {
     try {
       this.getUIContext().showAlertDialog({
         message: getString(this.ctx(), 'delete_confirm_message', a.name),
+        systemMaterial: dialogMaterial(),
         primaryButton: {
           value: $r('app.string.btn_cancel'),
           action: () => {
@@ -538,7 +548,7 @@ struct Index {
     .width('100%')
     .height('100%')
     .justifyContent(FlexAlign.Center)
-    .bindMenu(this.AddMenu, { placement: Placement.Top })
+    .bindMenu(this.AddMenu, { placement: Placement.Top, systemMaterial: menuMaterial() })
   }
 
   @Builder MoreTab() {
@@ -548,7 +558,7 @@ struct Index {
     .width('100%')
     .height('100%')
     .justifyContent(FlexAlign.Center)
-    .bindMenu(this.MoreMenu, { placement: Placement.Top })
+    .bindMenu(this.MoreMenu, { placement: Placement.Top, systemMaterial: menuMaterial() })
   }
 
   @Builder ImportSheet() {
@@ -737,6 +747,7 @@ struct Index {
     .navDestination(this.PageMap)
     .ignoreLayoutSafeArea([LayoutSafeAreaType.SYSTEM], [LayoutSafeAreaEdge.TOP, LayoutSafeAreaEdge.BOTTOM])
     .bindSheet($$this.importSheetOpen, this.ImportSheet(), {
+      systemMaterial: dialogMaterial(),
       detents: [SheetSize.FIT_CONTENT],
       title: { title: $r('app.string.import_password_hint') },
       showClose: true,

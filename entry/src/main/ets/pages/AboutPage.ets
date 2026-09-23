@@ -1,5 +1,5 @@
 import { bundleManager } from '@kit.AbilityKit';
-import { HdsNavDestination } from '@kit.UIDesignKit';
+import { HdsNavDestination, hdsMaterial, ScrollEffectType } from '@kit.UIDesignKit';
 
 @Component
 export struct AboutPage {
@@ -60,6 +60,16 @@ export struct AboutPage {
     .titleBar({
       content: {
         title: { mainTitle: $r('app.string.about_title') }
+      },
+      style: {
+        scrollEffectOpts: {
+          enableScrollEffect: true,
+          scrollEffectType: ScrollEffectType.GRADIENT_BLUR
+        },
+        systemMaterialEffect: {
+          materialType: hdsMaterial.MaterialType.ADAPTIVE,
+          materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+        }
       },
       avoidLayoutSafeArea: true,
       enableComponentSafeArea: true

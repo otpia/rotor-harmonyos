@@ -1,8 +1,8 @@
 import { common } from '@kit.AbilityKit';
 import { fileIo, picker } from '@kit.CoreFileKit';
 import { util } from '@kit.ArkTS';
-import { ItemState, SymbolGlyphModifier, ToolBar, ToolBarOptions } from '@kit.ArkUI';
-import { HdsNavDestination } from '@kit.UIDesignKit';
+import { ItemState, SymbolGlyphModifier, ToolBar, ToolBarOptions, uiMaterial } from '@kit.ArkUI';
+import { HdsNavDestination, hdsMaterial, ScrollEffectType } from '@kit.UIDesignKit';
 import { OtpAccount } from '../model/OtpAccount';
 import { OtpAccountStore } from '../services/OtpAccountStore';
 import { SecretVault } from '../services/SecretVault';
@@ -48,7 +48,10 @@ export struct ManagePage {
 
   private toast(msg: ResourceStr): void {
     try {
-      this.getUIContext().getPromptAction().showToast({ message: msg });
+      this.getUIContext().getPromptAction().showToast({
+        message: msg,
+        systemMaterial: new uiMaterial.ImmersiveMaterial({ style: uiMaterial.ImmersiveStyle.THICK })
+      });
     } catch (e) {
       console.error('[ManagePage.toast]', e);
     }
@@ -127,6 +130,7 @@ export struct ManagePage {
     try {
       this.getUIContext().showAlertDialog({
         message: message,
+        systemMaterial: new uiMaterial.ImmersiveMaterial({ style: uiMaterial.ImmersiveStyle.ULTRA_THICK }),
         primaryButton: {
           value: $r('app.string.btn_cancel'),
           action: () => {
@@ -350,6 +354,7 @@ export struct ManagePage {
         .contentEndOffset(16)
         .clipContent(ContentClipMode.SAFE_AREA)
         .bindSheet($$this.pwdSheetOpen, this.PwdSheet(), {
+          systemMaterial: new uiMaterial.ImmersiveMaterial({ style: uiMaterial.ImmersiveStyle.ULTRA_THICK }),
           detents: [SheetSize.FIT_CONTENT],
           title: { title: $r('app.string.export_password_hint') },
           showClose: true,
@@ -367,6 +372,16 @@ export struct ManagePage {
         title: {
           mainTitle: $r('app.string.btn_edit'),
           subTitle: getString(this.ctx(), 'selected_count', this.selectedCount())
+        }
+      },
+      style: {
+        scrollEffectOpts: {
+          enableScrollEffect: true,
+          scrollEffectType: ScrollEffectType.GRADIENT_BLUR
+        },
+        systemMaterialEffect: {
+          materialType: hdsMaterial.MaterialType.ADAPTIVE,
+          materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
         }
       },
       avoidLayoutSafeArea: true,

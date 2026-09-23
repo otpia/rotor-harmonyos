@@ -1,6 +1,7 @@
 import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS';
-import { HdsNavDestination } from '@kit.UIDesignKit';
+import { uiMaterial } from '@kit.ArkUI';
+import { HdsNavDestination, hdsMaterial, ScrollEffectType } from '@kit.UIDesignKit';
 import { OtpAccount, OtpType, cloneAccount, defaultAccount } from '../model/OtpAccount';
 import { OtpAccountStore } from '../services/OtpAccountStore';
 import { SecretVault } from '../services/SecretVault';
@@ -54,7 +55,10 @@ export struct EditPage {
 
   private toast(msg: ResourceStr): void {
     try {
-      this.getUIContext().getPromptAction().showToast({ message: msg });
+      this.getUIContext().getPromptAction().showToast({
+        message: msg,
+        systemMaterial: new uiMaterial.ImmersiveMaterial({ style: uiMaterial.ImmersiveStyle.THICK })
+      });
     } catch (e) {
       console.error('[EditPage.toast]', e);
     }
@@ -181,7 +185,6 @@ export struct EditPage {
         .value(valueText)
         .font({ size: $r('sys.float.Body_L') })
         .fontColor($r('sys.color.font_secondary'))
-        .backgroundColor(Color.Transparent)
         .onSelect((i: number) => {
           onSelect(i);
         })
@@ -311,6 +314,16 @@ export struct EditPage {
               }
             }
           }]
+        }
+      },
+      style: {
+        scrollEffectOpts: {
+          enableScrollEffect: true,
+          scrollEffectType: ScrollEffectType.GRADIENT_BLUR
+        },
+        systemMaterialEffect: {
+          materialType: hdsMaterial.MaterialType.ADAPTIVE,
+          materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
         }
       },
       avoidLayoutSafeArea: true,
