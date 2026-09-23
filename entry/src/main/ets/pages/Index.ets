@@ -1,17 +1,14 @@
 import { pasteboard } from '@kit.BasicServicesKit';
 import { common } from '@kit.AbilityKit';
 import { picker } from '@kit.CoreFileKit';
-import { SymbolGlyphModifier } from '@kit.ArkUI';
+import { KeyboardAvoidMode, SymbolGlyphModifier } from '@kit.ArkUI';
 import {
-  BottomBuilderShowType,
-  HdsAnimationMode,
-  HdsListItem,
+  HdsBarStyle,
   HdsNavigation,
   HdsNavigationTitleMode,
   HdsTabs,
   HdsTabsController,
   hdsMaterial,
-  HideMode,
   ScrollEffectType
 } from '@kit.UIDesignKit';
 import { OtpAccount, OtpType } from '../model/OtpAccount';
@@ -58,6 +55,12 @@ struct Index {
   aboutToAppear(): void {
     this.refresh();
     this.unsubTick = TickerService.subscribe((now: number) => this.tick(now));
+    // 软键盘弹出时压缩页面而不是整体上移，保证标题栏与悬浮栏都留在可视区
+    try {
+      this.getUIContext().setKeyboardAvoidMode(KeyboardAvoidMode.RESIZE);
+    } catch (e) {
+      console.error('[Index.setKeyboardAvoidMode]', e);
+    }
     // 从任意二级页回到导航根时刷新列表并收起横滑
     try {
       this.pathStack.setInterception({
@@ -372,32 +375,31 @@ struct Index {
 
   // ---------- 搜索 ----------
 
-  // 底部栏「搜索」：回到列表顶部让搜索框露出，再聚焦输入
-  private focusSearch(): void {
+  // 展开悬浮栏迷你栏里的搜索框并聚焦
+  private openSearch(): void {
     try {
-      this.listScroller.scrollToIndex(0, true);
+      this.tabsController.applyMiniBarStyle(HdsBarStyle.EXPAND);
     } catch (e) {
-      console.error('[Index.focusSearch] scroll', e);
+      console.error('[Index.openSearch] expand', e);
     }
     setTimeout(() => {
       try {
         this.getUIContext().getFocusController().requestFocus(SEARCH_ID);
       } catch (e) {
-        console.error('[Index.focusSearch] focus', e);
+        console.error('[Index.openSearch] focus', e);
       }
-    }, 250);
+    }, 300);
   }
 
-  // 输入时隐藏悬浮栏，避免与软键盘叠在一起；失焦后恢复
-  private onSearchFocusChange(focused: boolean): void {
+  // 失焦且无输入时折叠回搜索图标
+  private onSearchBlur(): void {
+    if (this.query.length > 0) {
+      return;
+    }
     try {
-      if (focused) {
-        this.tabsController.applyHideAnimation(HdsAnimationMode.CLICK_ANIMATION);
-      } else {
-        this.tabsController.applyShowAnimation(HdsAnimationMode.CLICK_ANIMATION);
-      }
+      this.tabsController.applyMiniBarStyle(HdsBarStyle.COLLAPSE);
     } catch (e) {
-      console.error('[Index.onSearchFocusChange]', e);
+      console.error('[Index.onSearchBlur]', e);
     }
   }
 
@@ -458,16 +460,41 @@ struct Index {
       .margin({ top: 2 })
   }
 
-  @Builder SearchTab() {
-    Column() {
-      this.BarIcon($r('sys.symbol.magnifyingglass'), $r('app.string.bar_search'))
+  @Builder SearchMiniBar() {
+    Row() {
+      Column() {
+        SymbolGlyph($r('sys.symbol.magnifyingglass'))
+          .fontSize(24)
+          .fontColor([$r('sys.color.icon_primary')])
+      }
+      .width(48)
+      .height(48)
+      .justifyContent(FlexAlign.Center)
+      .onClick(() => {
+        this.openSearch();
+      })
+
+      Search({ value: this.query, placeholder: $r('app.string.search_placeholder') })
+        .id(SEARCH_ID)
+        .height(40)
+        .layoutWeight(1)
+        .margin({ right: 8 })
+        .onChange((v: string) => {
+          this.query = v;
+        })
+        .onBlur(() => {
+          this.onSearchBlur();
+        })
+        .onSubmit(() => {
+          try {
+            this.getUIContext().getFocusController().clearFocus();
+          } catch (e) {
+            console.error('[Index.SearchMiniBar] clearFocus', e);
+          }
+        })
     }
-    .width('100%')
     .height('100%')
-    .justifyContent(FlexAlign.Center)
-    .onClick(() => {
-      this.focusSearch();
-    })
+    .alignItems(VerticalAlign.Center)
   }
 
   @Builder AddTab() {
@@ -490,35 +517,6 @@ struct Index {
     .bindMenu(this.MoreMenu, { placement: Placement.Top })
   }
 
-  @Builder SearchArea() {
-    Row() {
-      Search({ value: this.query, placeholder: $r('app.string.search_placeholder') })
-        .id(SEARCH_ID)
-        .height(40)
-        .layoutWeight(1)
-        .onChange((v: string) => {
-          this.query = v;
-        })
-        .onFocus(() => {
-          this.onSearchFocusChange(true);
-        })
-        .onBlur(() => {
-          this.onSearchFocusChange(false);
-        })
-        .onSubmit(() => {
-          try {
-            this.getUIContext().getFocusController().clearFocus();
-          } catch (e) {
-            console.error('[Index.SearchArea] clearFocus', e);
-          }
-        })
-    }
-    .width('100%')
-    .height(56)
-    .padding({ left: 16, right: 16 })
-    .alignItems(VerticalAlign.Center)
-  }
-
   @Builder ImportSheet() {
     PasswordSheet({
       needConfirm: false,
@@ -528,6 +526,37 @@ struct Index {
         this.runImport(pwd);
       }
     })
+  }
+
+  @Builder SwipeCircle(icon: Resource, bg: Resource, onTap: () => void) {
+    Column() {
+      SymbolGlyph(icon)
+        .fontSize(20)
+        .fontColor([$r('sys.color.icon_on_primary')])
+    }
+    .width(40)
+    .height(40)
+    .borderRadius(20)
+    .backgroundColor(bg)
+    .justifyContent(FlexAlign.Center)
+    .onClick(() => {
+      onTap();
+    })
+  }
+
+  // 左滑露出的编辑与删除按钮
+  @Builder SwipeActions(a: OtpAccount) {
+    Row({ space: 12 }) {
+      this.SwipeCircle($r('sys.symbol.square_and_pencil'), $r('sys.color.alert'), () => {
+        this.edit(a);
+      })
+      this.SwipeCircle($r('sys.symbol.trash'), $r('sys.color.warning'), () => {
+        this.askDelete(a);
+      })
+    }
+    .height('100%')
+    .alignItems(VerticalAlign.Center)
+    .padding({ left: 12 })
   }
 
   @Builder CardBuilder(a: OtpAccount) {
@@ -561,23 +590,16 @@ struct Index {
     } else {
       List({ space: 12, scroller: this.listScroller }) {
         ForEach(this.filtered(), (a: OtpAccount) => {
-          HdsListItem({
-            customItemBuilder: () => {
-              this.CardBuilder(a);
-            },
-            swipeActionOptions: {
-              icons: [{
-                icon: new SymbolGlyphModifier($r('sys.symbol.square_and_pencil')),
-                onAction: () => {
-                  this.edit(a);
-                }
-              }],
-              deleteIconOptions: {
-                onAction: () => {
-                  this.askDelete(a);
-                }
+          ListItem() {
+            this.CardBuilder(a)
+          }
+          .swipeAction({
+            end: {
+              builder: () => {
+                this.SwipeActions(a);
               }
-            }
+            },
+            edgeEffect: SwipeEdgeEffect.None
           })
         }, (a: OtpAccount) => a.id)
           .onMove((from: number, to: number) => {
@@ -610,11 +632,6 @@ struct Index {
         TabContent() {
           this.ListArea()
         }
-        .tabBar(this.SearchTab())
-
-        TabContent() {
-          Column()
-        }
         .tabBar(this.AddTab())
 
         TabContent() {
@@ -634,6 +651,12 @@ struct Index {
         systemMaterialEffect: {
           materialType: hdsMaterial.MaterialType.ADAPTIVE,
           materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+        },
+        miniBar: {
+          miniBarBuilder: () => {
+            this.SearchMiniBar();
+          },
+          miniBarStyle: HdsBarStyle.COLLAPSE
         }
       })
       .onContentWillChange((_current: number, _coming: number) => false)
@@ -644,14 +667,7 @@ struct Index {
     .hideBackButton(true)
     .titleBar({
       content: {
-        title: { mainTitle: $r('app.string.EntryAbility_label') },
-        bottomBuilder: {
-          builder: () => {
-            this.SearchArea();
-          },
-          height: 56,
-          showType: BottomBuilderShowType.DIRECTLY_SHOW
-        }
+        title: { mainTitle: $r('app.string.EntryAbility_label') }
       },
       style: {
         scrollEffectOpts: {
@@ -675,13 +691,6 @@ struct Index {
       },
       avoidLayoutSafeArea: true,
       enableComponentSafeArea: true
-    })
-    .dynamicHideTitleBar({
-      hideTitleArea: false,
-      hideBottomBuilder: true,
-      hideStatusBar: false,
-      mode: HideMode.SCROLL_UP_TO,
-      hideOffset: 0
     })
     .bindToScrollable([this.listScroller])
     .navDestination(this.PageMap)
