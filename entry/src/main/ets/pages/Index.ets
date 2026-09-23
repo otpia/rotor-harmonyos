@@ -472,14 +472,21 @@ struct Index {
     })
   }
 
-  // 搜索态：替代悬浮栏出现在底部，键盘弹出时随页面压缩贴在键盘上方
+  // 搜索态：替代悬浮栏出现在底部，与悬浮栏同为毛玻璃胶囊，键盘弹出时随页面压缩贴在键盘上方
   @Builder SearchBarRow() {
     Row() {
-      Search({ value: this.query, placeholder: $r('app.string.search_placeholder') })
+      SymbolGlyph($r('sys.symbol.magnifyingglass'))
+        .fontSize(22)
+        .fontColor([$r('sys.color.icon_secondary')])
+        .margin({ left: 16, right: 8 })
+      TextInput({ text: this.query, placeholder: $r('app.string.search_placeholder') })
         .id(SEARCH_ID)
-        .height(40)
+        .height(56)
         .layoutWeight(1)
+        .fontSize($r('sys.float.Body_L'))
         .backgroundColor(Color.Transparent)
+        .padding({ left: 0, right: 0 })
+        .enterKeyType(EnterKeyType.Search)
         .onChange((v: string) => {
           this.query = v;
         })
@@ -490,22 +497,27 @@ struct Index {
             console.error('[Index.SearchBarRow] clearFocus', e);
           }
         })
-      Button($r('app.string.btn_cancel'))
-        .buttonStyle(ButtonStyleMode.TEXTUAL)
-        .controlSize(ControlSize.SMALL)
-        .onClick(() => {
-          this.exitSearch();
-        })
+      Button({ type: ButtonType.Circle }) {
+        SymbolGlyph($r('sys.symbol.xmark'))
+          .fontSize(20)
+          .fontColor([$r('sys.color.icon_primary')])
+      }
+      .width(40)
+      .height(40)
+      .backgroundColor($r('sys.color.comp_background_tertiary'))
+      .margin({ right: 8 })
+      .onClick(() => {
+        this.exitSearch();
+      })
     }
     .height(56)
-    .padding({ left: 8, right: 4 })
     .margin({
       left: 16,
       right: 16,
       bottom: Math.max(this.getUIContext().px2vp(this.bottomSafeAreaPx), 16)
     })
     .borderRadius(28)
-    .backgroundColor($r('sys.color.comp_background_list_card'))
+    .backgroundBlurStyle(BlurStyle.COMPONENT_ULTRA_THICK)
     .shadow(ShadowStyle.OUTER_DEFAULT_SM)
     .alignItems(VerticalAlign.Center)
     .transition(TransitionEffect.asymmetric(
