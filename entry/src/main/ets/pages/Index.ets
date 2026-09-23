@@ -1,84 +1,100 @@
 import { pasteboard } from '@kit.BasicServicesKit';
 import { common } from '@kit.AbilityKit';
 import { picker } from '@kit.CoreFileKit';
+import { SymbolGlyphModifier } from '@kit.ArkUI';
+import {
+  BottomBuilderShowType,
+  HdsAnimationMode,
+  HdsListItem,
+  HdsNavigation,
+  HdsNavigationTitleMode,
+  HdsTabs,
+  HdsTabsController,
+  hdsMaterial,
+  HideMode,
+  ScrollEffectType
+} from '@kit.UIDesignKit';
 import { OtpAccount, OtpType } from '../model/OtpAccount';
 import { OtpAccountStore } from '../services/OtpAccountStore';
 import { SecretVault } from '../services/SecretVault';
 import { totp, hotp, remainingSeconds } from '../services/OtpEngine';
 import { TickerService } from '../services/TickerService';
 import { importBackup } from '../services/BackupImporter';
+import { scanQrCode, ScanResult, ScanResultKind } from '../services/ScanService';
 import { getString } from '../utils/I18n';
-import { OtpItem } from '../components/OtpItem';
-import { SearchBar } from '../components/SearchBar';
-import { CopyToast } from '../components/CopyToast';
-import { PlusMenuPopup } from '../components/PlusMenuPopup';
-import { MoreMenuPopup } from '../components/MoreMenuPopup';
-import { DeleteConfirmDialog } from '../components/DeleteConfirmDialog';
-import { PasswordDialog } from '../components/PasswordDialog';
-import { PageContainer } from '../components/PageContainer';
+import { OtpCard } from '../components/OtpCard';
+import { PasswordSheet } from '../components/PasswordSheet';
+import { EditPage, EditParams } from './EditPage';
+import { ManagePage } from './ManagePage';
+import { AboutPage } from './AboutPage';
 
 interface CodeState {
   code: string;
   remaining: number;
 }
 
+const ROUTE_EDIT = 'edit';
+const ROUTE_MANAGE = 'manage';
+const ROUTE_ABOUT = 'about';
+const SEARCH_ID = 'rotor_search_input';
+// 底部悬浮栏高度加留白，列表末尾预留，避免最后一项被遮挡
+const LIST_END_OFFSET = 108;
+
 @Entry
 @Component
 struct Index {
+  @Provide('pathStack') pathStack: NavPathStack = new NavPathStack();
   @State accounts: OtpAccount[] = [];
   @State codes: Record<string, CodeState> = {};
   @State secrets: Record<string, string> = {};
   @State query: string = '';
-  @State toastVisible: boolean = false;
-  @State plusOpen: boolean = false;
-  @State moreOpen: boolean = false;
-  @State pendingDeleteName: string = '';
-  // 自增版本号，配合 ForEach key 在 onPageShow 时强制重建列表，重置 swipeAction 偏移
-  @State listVersion: number = 0;
-  private pendingDeleteId: string = '';
+  @State importSheetOpen: boolean = false;
+  @StorageProp('bottomSafeAreaPx') bottomSafeAreaPx: number = 0;
+  private listScroller: ListScroller = new ListScroller();
+  private tabsController: HdsTabsController = new HdsTabsController();
   private pendingImportUri: string = '';
   private unsubTick: (() => void) | null = null;
-  private listScroller: ListScroller = new ListScroller();
-
-  deleteDialog: CustomDialogController = new CustomDialogController({
-    builder: DeleteConfirmDialog({
-      name: this.pendingDeleteName,
-      onConfirm: () => this.confirmDelete()
-    }),
-    alignment: DialogAlignment.Bottom,
-    customStyle: true,
-    maskColor: $r('app.color.scrim')
-  });
-
-  importPasswordDialog: CustomDialogController = new CustomDialogController({
-    builder: PasswordDialog({
-      title: $r('app.string.import_password_hint'),
-      needConfirm: false,
-      submitLabel: $r('app.string.btn_import'),
-      onSubmit: (pwd: string) => this.runImport(pwd)
-    }),
-    alignment: DialogAlignment.Bottom,
-    customStyle: true,
-    maskColor: $r('app.color.scrim')
-  });
 
   aboutToAppear(): void {
     this.refresh();
     this.unsubTick = TickerService.subscribe((now: number) => this.tick(now));
+    // 从任意二级页回到导航根时刷新列表并收起横滑
+    try {
+      this.pathStack.setInterception({
+        didShow: (_from: NavDestinationContext | NavBar, to: NavDestinationContext | NavBar) => {
+          if (typeof to === 'string') {
+            this.onReturnHome();
+          }
+        }
+      });
+    } catch (e) {
+      console.error('[Index.setInterception]', e);
+    }
   }
 
   aboutToDisappear(): void {
-    if (this.unsubTick) this.unsubTick();
+    if (this.unsubTick) {
+      this.unsubTick();
+    }
   }
 
-  onPageShow(): void {
-    this.listVersion++;
-    this.refresh();
+  private ctx(): common.UIAbilityContext {
+    return this.getUIContext().getHostContext() as common.UIAbilityContext;
   }
+
+  private toast(msg: ResourceStr): void {
+    try {
+      this.getUIContext().getPromptAction().showToast({ message: msg });
+    } catch (e) {
+      console.error('[Index.toast]', e);
+    }
+  }
+
+  // ---------- 数据 ----------
 
   private async refresh(): Promise<void> {
     try {
-      const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      const ctx = this.ctx();
       this.accounts = await OtpAccountStore.listAll(ctx);
       for (const a of this.accounts) {
         if (!this.secrets[a.id]) {
@@ -102,7 +118,9 @@ struct Index {
           if (sec && (!prev || prev.code === '------')) {
             try {
               code = await hotp(sec, a.counter, a.digits, a.algorithm);
-            } catch (_e) { code = '------'; }
+            } catch (_e) {
+              code = '------';
+            }
           }
           next[a.id] = { code, remaining: a.period };
         } else {
@@ -110,7 +128,9 @@ struct Index {
           if (sec && (!prev || remaining === a.period || prev.code === '------')) {
             try {
               code = await totp(sec, now, a.period, a.digits, a.algorithm);
-            } catch (_e) { code = '------'; }
+            } catch (_e) {
+              code = '------';
+            }
           }
           next[a.id] = { code, remaining };
         }
@@ -124,14 +144,17 @@ struct Index {
   private async refreshHotp(a: OtpAccount): Promise<void> {
     try {
       const sec = this.secrets[a.id];
-      if (!sec) return;
+      if (!sec) {
+        return;
+      }
       a.counter += 1;
       a.updatedAt = Date.now();
       const code = await hotp(sec, a.counter, a.digits, a.algorithm);
-      const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
-      await OtpAccountStore.update(ctx, a);
+      await OtpAccountStore.update(this.ctx(), a);
       const next: Record<string, CodeState> = {};
-      for (const k of Object.keys(this.codes)) next[k] = this.codes[k];
+      for (const k of Object.keys(this.codes)) {
+        next[k] = this.codes[k];
+      }
       next[a.id] = { code, remaining: a.period };
       this.codes = next;
     } catch (e) {
@@ -140,7 +163,9 @@ struct Index {
   }
 
   private filtered(): OtpAccount[] {
-    if (!this.query) return this.accounts;
+    if (this.query.length === 0) {
+      return this.accounts;
+    }
     const q = this.query.toLowerCase();
     return this.accounts.filter((a: OtpAccount) =>
       a.name.toLowerCase().includes(q) || a.note.toLowerCase().includes(q));
@@ -149,70 +174,56 @@ struct Index {
   private async copy(a: OtpAccount): Promise<void> {
     try {
       const c = this.codes[a.id];
-      if (!c) return;
+      if (!c) {
+        return;
+      }
       const data = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, c.code);
       await pasteboard.getSystemPasteboard().setData(data);
-      this.toastVisible = true;
-      setTimeout(() => { this.toastVisible = false; }, 1500);
+      this.toast($r('app.string.toast_copied'));
     } catch (e) {
       console.error('[Index.copy]', e);
     }
   }
 
-  private askDelete(a: OtpAccount): void {
-    this.pendingDeleteName = a.name;
-    this.pendingDeleteId = a.id;
-    this.deleteDialog = new CustomDialogController({
-      builder: DeleteConfirmDialog({
-        name: a.name,
-        onConfirm: () => this.confirmDelete(),
-        onCancel: () => this.listScroller.closeAllSwipeActions()
-      }),
-      cancel: () => this.listScroller.closeAllSwipeActions(),
-      alignment: DialogAlignment.Bottom,
-      customStyle: true,
-      maskColor: $r('app.color.scrim')
-    });
-    this.deleteDialog.open();
-  }
-
-  private async confirmDelete(): Promise<void> {
-    try {
-      if (!this.pendingDeleteId) return;
-      const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
-      const id = this.pendingDeleteId;
-      await SecretVault.remove(id);
-      await OtpAccountStore.delete(ctx, id);
-      this.pendingDeleteId = '';
-      this.pendingDeleteName = '';
-      this.refresh();
-    } catch (e) {
-      console.error('[Index.confirmDelete]', e);
-    }
-  }
-
-  private edit(a: OtpAccount): void {
-    try {
-      this.getUIContext().getRouter().pushUrl({ url: 'pages/EditPage', params: { id: a.id, prefilled: a } });
-    } catch (e) {
-      console.error('[Index.edit]', e);
-    }
-  }
-
+  // 拖拽排序按 id 定位，兼容搜索过滤后的可见索引
   private async reorder(from: number, to: number): Promise<void> {
     try {
-      if (from < 0 || to < 0 || from >= this.accounts.length || to >= this.accounts.length || from === to) return;
+      const view = this.filtered();
+      if (from < 0 || to < 0 || from >= view.length || to >= view.length || from === to) {
+        return;
+      }
+      const movedId = view[from].id;
+      const targetId = view[to].id;
+      let moved: OtpAccount | null = null;
       const arr: OtpAccount[] = [];
-      for (const a of this.accounts) arr.push(a);
-      const moved = arr.splice(from, 1)[0];
-      arr.splice(to, 0, moved);
+      for (const a of this.accounts) {
+        if (a.id === movedId) {
+          moved = a;
+        } else {
+          arr.push(a);
+        }
+      }
+      if (moved === null) {
+        return;
+      }
+      let targetIndex = -1;
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i].id === targetId) {
+          targetIndex = i;
+          break;
+        }
+      }
+      if (targetIndex < 0) {
+        return;
+      }
+      arr.splice(from < to ? targetIndex + 1 : targetIndex, 0, moved);
       const now = Date.now();
       for (let i = 0; i < arr.length; i++) {
         arr[i].orderIndex = i + 1;
         arr[i].updatedAt = now;
       }
       this.accounts = arr;
-      const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      const ctx = this.ctx();
       for (const a of arr) {
         try {
           await OtpAccountStore.update(ctx, a);
@@ -225,184 +236,461 @@ struct Index {
     }
   }
 
-  @Builder SwipeStart(a: OtpAccount) {
-    Image($r('app.media.swipe_edit'))
-      .width(40).height(40)
-      .margin({ left: 8, right: 16 })
-      .onClick(() => this.edit(a))
+  private askDelete(a: OtpAccount): void {
+    try {
+      this.getUIContext().showAlertDialog({
+        message: getString(this.ctx(), 'delete_confirm_message', a.name),
+        primaryButton: {
+          value: $r('app.string.btn_cancel'),
+          action: () => {
+            this.listScroller.closeAllSwipeActions();
+          }
+        },
+        secondaryButton: {
+          value: $r('app.string.btn_delete'),
+          fontColor: $r('sys.color.warning'),
+          action: () => {
+            this.confirmDelete(a.id);
+          }
+        },
+        cancel: () => {
+          this.listScroller.closeAllSwipeActions();
+        }
+      });
+    } catch (e) {
+      console.error('[Index.askDelete]', e);
+    }
   }
 
-  @Builder SwipeEnd(a: OtpAccount) {
-    Image($r('app.media.swipe_delete'))
-      .width(40).height(40)
-      .margin({ left: 16, right: 8 })
-      .onClick(() => this.askDelete(a))
+  private async confirmDelete(id: string): Promise<void> {
+    try {
+      await SecretVault.remove(id);
+      await OtpAccountStore.delete(this.ctx(), id);
+      this.refresh();
+    } catch (e) {
+      console.error('[Index.confirmDelete]', e);
+    }
   }
+
+  // ---------- 路由 ----------
+
+  private onReturnHome(): void {
+    this.refresh();
+    try {
+      this.listScroller.closeAllSwipeActions();
+    } catch (e) {
+      console.error('[Index.onReturnHome]', e);
+    }
+  }
+
+  private pushEdit(p: EditParams): void {
+    try {
+      this.pathStack.pushPathByName(ROUTE_EDIT, p);
+    } catch (e) {
+      console.error('[Index.pushEdit]', e);
+    }
+  }
+
+  private edit(a: OtpAccount): void {
+    const p: EditParams = { id: a.id, prefilled: a };
+    this.pushEdit(p);
+  }
+
+  private addManually(): void {
+    const p: EditParams = {};
+    this.pushEdit(p);
+  }
+
+  private async addByScan(): Promise<void> {
+    const ctx = this.ctx();
+    const r: ScanResult = await scanQrCode(ctx);
+    const parsed = r.parsed;
+    if (r.kind === ScanResultKind.SINGLE && parsed !== null) {
+      const p: EditParams = { prefilled: parsed.account, prefilledSecret: parsed.secret };
+      this.pushEdit(p);
+    } else if (r.kind === ScanResultKind.IMPORTED) {
+      this.toast(getString(ctx, 'toast_imported_count', r.importedCount));
+      this.refresh();
+    } else if (r.kind === ScanResultKind.PERMISSION_DENIED) {
+      this.toast($r('app.string.toast_camera_required'));
+    } else if (r.kind === ScanResultKind.UNRECOGNIZED) {
+      this.toast($r('app.string.toast_qr_unrecognized'));
+    } else if (r.kind === ScanResultKind.NO_ACCOUNT) {
+      this.toast($r('app.string.toast_qr_no_account'));
+    }
+  }
+
+  private goManage(): void {
+    try {
+      this.pathStack.pushPathByName(ROUTE_MANAGE, ROUTE_MANAGE);
+    } catch (e) {
+      console.error('[Index.goManage]', e);
+    }
+  }
+
+  private goAbout(): void {
+    try {
+      this.pathStack.pushPathByName(ROUTE_ABOUT, ROUTE_ABOUT);
+    } catch (e) {
+      console.error('[Index.goAbout]', e);
+    }
+  }
+
+  // ---------- 导入备份 ----------
 
   private async handleImport(): Promise<void> {
-    this.moreOpen = false;
     try {
-      const docPicker = new picker.DocumentViewPicker();
+      const docPicker = new picker.DocumentViewPicker(this.ctx());
       const opts: picker.DocumentSelectOptions = { maxSelectNumber: 1 };
       const uris = await docPicker.select(opts);
-      if (!uris || uris.length === 0) return;
+      if (!uris || uris.length === 0) {
+        return;
+      }
       this.pendingImportUri = uris[0];
-      this.importPasswordDialog = new CustomDialogController({
-        builder: PasswordDialog({
-          title: $r('app.string.import_password_hint'),
-          needConfirm: false,
-          submitLabel: $r('app.string.btn_import'),
-          onSubmit: (pwd: string) => this.runImport(pwd)
-        }),
-        alignment: DialogAlignment.Bottom,
-        customStyle: true,
-        maskColor: $r('app.color.scrim')
-      });
-      this.importPasswordDialog.open();
+      this.importSheetOpen = true;
     } catch (e) {
       console.error('[Index.handleImport]', e);
     }
   }
 
   private async runImport(password: string): Promise<void> {
-    if (!this.pendingImportUri) return;
+    this.importSheetOpen = false;
+    if (this.pendingImportUri.length === 0) {
+      return;
+    }
+    const ctx = this.ctx();
     try {
-      const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
       const count = await importBackup(ctx, this.pendingImportUri, password);
       this.toast(getString(ctx, 'toast_imported_count', count));
       this.pendingImportUri = '';
       this.refresh();
     } catch (e) {
       console.error('[Index.runImport]', e);
-      const ctx2 = this.getUIContext().getHostContext() as common.UIAbilityContext;
-      this.toast(getString(ctx2, 'toast_import_failed'));
+      this.toast($r('app.string.toast_import_failed'));
     }
   }
 
-  private toast(msg: string): void {
+  // ---------- 搜索 ----------
+
+  // 底部栏「搜索」：回到列表顶部让搜索框露出，再聚焦输入
+  private focusSearch(): void {
     try {
-      this.getUIContext().getPromptAction().showToast({ message: msg });
+      this.listScroller.scrollToIndex(0, true);
     } catch (e) {
-      console.error('[Index.toast]', e);
+      console.error('[Index.focusSearch] scroll', e);
     }
+    setTimeout(() => {
+      try {
+        this.getUIContext().getFocusController().requestFocus(SEARCH_ID);
+      } catch (e) {
+        console.error('[Index.focusSearch] focus', e);
+      }
+    }, 250);
   }
 
-  private goExport(): void {
-    this.moreOpen = false;
+  // 输入时隐藏悬浮栏，避免与软键盘叠在一起；失焦后恢复
+  private onSearchFocusChange(focused: boolean): void {
     try {
-      this.getUIContext().getRouter().pushUrl({ url: 'pages/ExportPage' });
+      if (focused) {
+        this.tabsController.applyHideAnimation(HdsAnimationMode.CLICK_ANIMATION);
+      } else {
+        this.tabsController.applyShowAnimation(HdsAnimationMode.CLICK_ANIMATION);
+      }
     } catch (e) {
-      console.error('[Index.goExport]', e);
+      console.error('[Index.onSearchFocusChange]', e);
     }
   }
 
-  @Builder PageBody() {
-    Stack() {
-      Column() {
-        Row() {
-          Blank()
-          Stack() {
-            Circle({ width: 6, height: 6 }).fill($r('app.color.text_primary')).position({ x: 3, y: 3 })
-            Circle({ width: 6, height: 6 }).fill($r('app.color.text_primary')).position({ x: 15, y: 3 })
-            Circle({ width: 6, height: 6 }).fill($r('app.color.text_primary')).position({ x: 3, y: 15 })
-            Circle({ width: 6, height: 6 }).fill($r('app.color.text_primary')).position({ x: 15, y: 15 })
+  // ---------- 构建器 ----------
+
+  @Builder AddMenu() {
+    Menu() {
+      MenuItem({
+        symbolStartIcon: new SymbolGlyphModifier($r('sys.symbol.qrcode')),
+        content: $r('app.string.menu_scan_qr')
+      })
+        .onClick(() => {
+          this.addByScan();
+        })
+      MenuItem({
+        symbolStartIcon: new SymbolGlyphModifier($r('sys.symbol.keyboard')),
+        content: $r('app.string.menu_input_secret')
+      })
+        .onClick(() => {
+          this.addManually();
+        })
+    }
+  }
+
+  @Builder MoreMenu() {
+    Menu() {
+      MenuItem({
+        symbolStartIcon: new SymbolGlyphModifier($r('sys.symbol.square_and_arrow_down')),
+        content: $r('app.string.menu_import')
+      })
+        .onClick(() => {
+          this.handleImport();
+        })
+      MenuItem({
+        symbolStartIcon: new SymbolGlyphModifier($r('sys.symbol.square_and_pencil')),
+        content: $r('app.string.btn_edit')
+      })
+        .onClick(() => {
+          this.goManage();
+        })
+      MenuItem({
+        symbolStartIcon: new SymbolGlyphModifier($r('sys.symbol.info_circle')),
+        content: $r('app.string.menu_about')
+      })
+        .onClick(() => {
+          this.goAbout();
+        })
+    }
+  }
+
+  @Builder BarIcon(icon: Resource, label: Resource) {
+    SymbolGlyph(icon)
+      .fontSize(24)
+      .fontColor([$r('sys.color.icon_primary')])
+    Text(label)
+      .fontSize($r('sys.float.Caption_M'))
+      .fontColor($r('sys.color.font_primary'))
+      .margin({ top: 2 })
+  }
+
+  @Builder SearchTab() {
+    Column() {
+      this.BarIcon($r('sys.symbol.magnifyingglass'), $r('app.string.bar_search'))
+    }
+    .width('100%')
+    .height('100%')
+    .justifyContent(FlexAlign.Center)
+    .onClick(() => {
+      this.focusSearch();
+    })
+  }
+
+  @Builder AddTab() {
+    Column() {
+      this.BarIcon($r('sys.symbol.plus'), $r('app.string.bar_add'))
+    }
+    .width('100%')
+    .height('100%')
+    .justifyContent(FlexAlign.Center)
+    .bindMenu(this.AddMenu, { placement: Placement.Top })
+  }
+
+  @Builder MoreTab() {
+    Column() {
+      this.BarIcon($r('sys.symbol.dot_grid_2x2'), $r('app.string.bar_more'))
+    }
+    .width('100%')
+    .height('100%')
+    .justifyContent(FlexAlign.Center)
+    .bindMenu(this.MoreMenu, { placement: Placement.Top })
+  }
+
+  @Builder SearchArea() {
+    Row() {
+      Search({ value: this.query, placeholder: $r('app.string.search_placeholder') })
+        .id(SEARCH_ID)
+        .height(40)
+        .layoutWeight(1)
+        .onChange((v: string) => {
+          this.query = v;
+        })
+        .onFocus(() => {
+          this.onSearchFocusChange(true);
+        })
+        .onBlur(() => {
+          this.onSearchFocusChange(false);
+        })
+        .onSubmit(() => {
+          try {
+            this.getUIContext().getFocusController().clearFocus();
+          } catch (e) {
+            console.error('[Index.SearchArea] clearFocus', e);
           }
-          .width(24).height(24)
-          .onClick(() => { this.moreOpen = !this.moreOpen; this.plusOpen = false; })
-        }.width('100%').height(56).padding({ left: 16, right: 16 })
+        })
+    }
+    .width('100%')
+    .height(56)
+    .padding({ left: 16, right: 16 })
+    .alignItems(VerticalAlign.Center)
+  }
 
-        SearchBar({ query: $query }).margin({ left: 24, right: 24, top: 8, bottom: 16 })
-
-        if (this.accounts.length === 0) {
-          Column() {
-            Text($r('app.string.empty_hint'))
-              .fontColor($r('app.color.text_secondary')).fontSize(14)
-          }.layoutWeight(1).justifyContent(FlexAlign.Center).width('100%')
-        } else {
-          List({ space: 12, scroller: this.listScroller }) {
-            ForEach(this.filtered(), (a: OtpAccount) => {
-              ListItem() {
-                OtpItem({
-                  account: a,
-                  code: this.codes[a.id] ? this.codes[a.id].code : '------',
-                  remaining: this.codes[a.id] ? this.codes[a.id].remaining : a.period,
-                  onRefresh: () => this.refreshHotp(a)
-                })
-              }
-              .onClick(() => this.copy(a))
-              .swipeAction({
-                start: { builder: () => { this.SwipeStart(a) } },
-                end: { builder: () => { this.SwipeEnd(a) } },
-                edgeEffect: SwipeEdgeEffect.None
-              })
-            }, (a: OtpAccount) => `${a.id}-${this.listVersion}`)
-            .onMove((from: number, to: number) => {
-              this.reorder(from, to);
-            })
-          }
-          .layoutWeight(1)
-          .padding({ left: 24, right: 24, bottom: 16 })
-        }
-      }.width('100%').height('100%').backgroundColor($r('app.color.bg_app'))
-
-      // 加号或更多菜单展开时的全屏透明遮罩，点击空白处自动收起
-      if (this.plusOpen || this.moreOpen) {
-        Column()
-          .width('100%').height('100%')
-          .backgroundColor(Color.Transparent)
-          .onClick(() => { this.plusOpen = false; this.moreOpen = false; })
+  @Builder ImportSheet() {
+    PasswordSheet({
+      needConfirm: false,
+      placeholder: $r('app.string.import_password_hint'),
+      submitLabel: $r('app.string.btn_import'),
+      onSubmit: (pwd: string) => {
+        this.runImport(pwd);
       }
+    })
+  }
 
-      if (this.moreOpen) {
-        Column() {
-          MoreMenuPopup({
-            onImport: () => { this.handleImport(); },
-            onEdit: () => { this.goExport(); },
-            onAbout: () => {
-              this.moreOpen = false;
-              this.getUIContext().getRouter().pushUrl({ url: 'pages/AboutPage' });
-            }
-          })
-        }.position({ right: 16, top: 56 })
+  @Builder CardBuilder(a: OtpAccount) {
+    OtpCard({
+      account: a,
+      code: this.codes[a.id] ? this.codes[a.id].code : '------',
+      remaining: this.codes[a.id] ? this.codes[a.id].remaining : a.period,
+      onRefresh: () => {
+        this.refreshHotp(a);
       }
+    })
+      .onClick(() => {
+        this.copy(a);
+      })
+  }
 
+  @Builder ListArea() {
+    if (this.accounts.length === 0) {
       Column() {
-        if (this.plusOpen) {
-          PlusMenuPopup({
-            onInputSecret: () => {
-              this.plusOpen = false;
-              this.getUIContext().getRouter().pushUrl({ url: 'pages/EditPage' });
+        SymbolGlyph($r('sys.symbol.key'))
+          .fontSize(48)
+          .fontColor([$r('sys.color.icon_tertiary')])
+        Text($r('app.string.empty_hint'))
+          .fontSize($r('sys.float.Body_M'))
+          .fontColor($r('sys.color.font_secondary'))
+          .margin({ top: 12 })
+      }
+      .width('100%')
+      .height('100%')
+      .justifyContent(FlexAlign.Center)
+    } else {
+      List({ space: 12, scroller: this.listScroller }) {
+        ForEach(this.filtered(), (a: OtpAccount) => {
+          HdsListItem({
+            customItemBuilder: () => {
+              this.CardBuilder(a);
             },
-            onScanQr: () => {
-              this.plusOpen = false;
-              this.getUIContext().getRouter().pushUrl({ url: 'pages/ScanPage' });
+            swipeActionOptions: {
+              icons: [{
+                icon: new SymbolGlyphModifier($r('sys.symbol.square_and_pencil')),
+                onAction: () => {
+                  this.edit(a);
+                }
+              }],
+              deleteIconOptions: {
+                onAction: () => {
+                  this.askDelete(a);
+                }
+              }
             }
           })
-            .margin({ bottom: 12 })
-        }
-        Image($r('app.media.fab_add'))
-          .width(56).height(56)
-          .onClick(() => { this.plusOpen = !this.plusOpen; })
+        }, (a: OtpAccount) => a.id)
+          .onMove((from: number, to: number) => {
+            this.reorder(from, to);
+          })
       }
-      .position({ right: 24, bottom: 24 })
-      .alignItems(HorizontalAlign.End)
-
-      if (this.toastVisible) {
-        Column() {
-          CopyToast({ visible: this.toastVisible })
-        }
-        .position({ bottom: 24 })
-        .width('100%')
-        .alignItems(HorizontalAlign.Center)
-        .hitTestBehavior(HitTestMode.Transparent)
-      }
+      .width('100%')
+      .height('100%')
+      .padding({ left: 16, right: 16 })
+      .scrollBar(BarState.Off)
+      .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+      .contentEndOffset(LIST_END_OFFSET)
+      .clipContent(ContentClipMode.SAFE_AREA)
     }
-    .width('100%').height('100%')
+  }
+
+  @Builder PageMap(name: string, param: Object) {
+    if (name === ROUTE_EDIT) {
+      EditPage({ params: param as EditParams })
+    } else if (name === ROUTE_MANAGE) {
+      ManagePage()
+    } else if (name === ROUTE_ABOUT) {
+      AboutPage()
+    }
   }
 
   build() {
-    Stack() {
-      PageContainer({ content: () => { this.PageBody() } })
-    }.width('100%').height('100%')
+    HdsNavigation(this.pathStack) {
+      HdsTabs({ controller: this.tabsController }) {
+        TabContent() {
+          this.ListArea()
+        }
+        .tabBar(this.SearchTab())
+
+        TabContent() {
+          Column()
+        }
+        .tabBar(this.AddTab())
+
+        TabContent() {
+          Column()
+        }
+        .tabBar(this.MoreTab())
+      }
+      .width('100%')
+      .height('100%')
+      .barOverlap(true)
+      .vertical(false)
+      .barPosition(BarPosition.End)
+      .scrollable(false)
+      .barFloatingStyle({
+        adaptToHandedness: true,
+        barBottomMargin: this.bottomSafeAreaPx > 0 ? this.getUIContext().px2vp(this.bottomSafeAreaPx) : 16,
+        systemMaterialEffect: {
+          materialType: hdsMaterial.MaterialType.ADAPTIVE,
+          materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+        }
+      })
+      .onContentWillChange((_current: number, _coming: number) => false)
+    }
+    .mode(NavigationMode.Stack)
+    .backgroundColor($r('sys.color.background_secondary'))
+    .titleMode(HdsNavigationTitleMode.FREE)
+    .hideBackButton(true)
+    .titleBar({
+      content: {
+        title: { mainTitle: $r('app.string.EntryAbility_label') },
+        bottomBuilder: {
+          builder: () => {
+            this.SearchArea();
+          },
+          height: 56,
+          showType: BottomBuilderShowType.DIRECTLY_SHOW
+        }
+      },
+      style: {
+        scrollEffectOpts: {
+          enableScrollEffect: true,
+          scrollEffectType: ScrollEffectType.GRADIENT_BLUR
+        },
+        originalStyle: {
+          contentStyle: {
+            titleStyle: { mainTitleColor: $r('sys.color.font_primary') }
+          }
+        },
+        scrollEffectStyle: {
+          contentStyle: {
+            titleStyle: { mainTitleColor: $r('sys.color.font_primary') }
+          }
+        },
+        systemMaterialEffect: {
+          materialType: hdsMaterial.MaterialType.ADAPTIVE,
+          materialLevel: hdsMaterial.MaterialLevel.ADAPTIVE
+        }
+      },
+      avoidLayoutSafeArea: true,
+      enableComponentSafeArea: true
+    })
+    .dynamicHideTitleBar({
+      hideTitleArea: false,
+      hideBottomBuilder: true,
+      hideStatusBar: false,
+      mode: HideMode.SCROLL_UP_TO,
+      hideOffset: 0
+    })
+    .bindToScrollable([this.listScroller])
+    .navDestination(this.PageMap)
+    .ignoreLayoutSafeArea([LayoutSafeAreaType.SYSTEM], [LayoutSafeAreaEdge.TOP, LayoutSafeAreaEdge.BOTTOM])
+    .bindSheet($$this.importSheetOpen, this.ImportSheet(), {
+      detents: [SheetSize.FIT_CONTENT],
+      title: { title: $r('app.string.import_password_hint') },
+      showClose: true,
+      preferType: SheetType.BOTTOM
+    })
   }
 }

@@ -1,87 +1,70 @@
-import { bundleManager, common } from '@kit.AbilityKit';
-import { PageContainer } from '../components/PageContainer';
+import { bundleManager } from '@kit.AbilityKit';
+import { HdsNavDestination } from '@kit.UIDesignKit';
 
-@Entry
 @Component
-struct AboutPage {
+export struct AboutPage {
   @State versionName: string = '';
+  private scroller: Scroller = new Scroller();
 
   aboutToAppear(): void {
     try {
-      const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
       const flags = bundleManager.BundleFlag.GET_BUNDLE_INFO_DEFAULT;
       bundleManager.getBundleInfoForSelf(flags).then((info: bundleManager.BundleInfo) => {
         this.versionName = info.versionName || '';
       }).catch((e: Error) => {
         console.error('[AboutPage.versionName]', e);
       });
-      // ctx 仅作为引用避免被裁剪；后续可能用到
-      void ctx;
     } catch (e) {
       console.error('[AboutPage.aboutToAppear]', e);
     }
   }
 
-  @Builder NavButton(symbol: Resource, onTap: () => void) {
-    Stack() {
-      SymbolGlyph(symbol)
-        .fontSize(24)
-        .fontColor([$r('app.color.text_primary')])
-    }
-    .width(40).height(40)
-    .onClick(onTap)
-  }
-
-  @Builder PageBody() {
-    Column() {
-      Row() {
-        this.NavButton($r('sys.symbol.arrow_left'), () => this.getUIContext().getRouter().back())
-        Text($r('app.string.about_title'))
-          .fontSize(20)
-          .fontWeight(FontWeight.Bold)
-          .fontColor($r('app.color.text_primary'))
-          .margin({ left: 8 })
-          .layoutWeight(1)
-      }
-      .height(56)
-      .width('100%')
-      .padding({ left: 16, right: 16 })
-      .alignItems(VerticalAlign.Center)
-
-      Column() {
-        Image($r('app.media.appicon'))
-          .width(96).height(96)
-        Text($r('app.string.EntryAbility_label'))
-          .fontSize(24)
-          .fontWeight(FontWeight.Medium)
-          .fontColor($r('app.color.text_primary'))
-          .margin({ top: 16 })
-        Text(this.versionName ? `v${this.versionName}` : '')
-          .fontSize(14)
-          .fontColor($r('app.color.text_secondary'))
-          .margin({ top: 4 })
-      }
-      .alignItems(HorizontalAlign.Center)
-      .margin({ top: 32, bottom: 24 })
-      .width('100%')
-
-      Column() {
-        Text($r('app.string.about_description'))
-          .fontSize(14)
-          .fontColor($r('app.color.text_secondary'))
-          .lineHeight(22)
-          .padding({ left: 24, right: 24, top: 16, bottom: 16 })
-      }
-      .backgroundColor($r('app.color.bg_card'))
-      .borderRadius(20)
-      .margin({ left: 24, right: 24 })
-      .width('auto')
-    }.width('100%').height('100%')
-  }
-
   build() {
-    Stack() {
-      PageContainer({ content: () => { this.PageBody() } })
-    }.width('100%').height('100%')
+    HdsNavDestination() {
+      Scroll(this.scroller) {
+        Column() {
+          Image($r('app.media.appicon'))
+            .width(96)
+            .height(96)
+            .margin({ top: 24 })
+          Text($r('app.string.EntryAbility_label'))
+            .fontSize($r('sys.float.Title_S'))
+            .fontWeight(FontWeight.Medium)
+            .fontColor($r('sys.color.font_primary'))
+            .margin({ top: 16 })
+          Text(this.versionName.length > 0 ? `v${this.versionName}` : '')
+            .fontSize($r('sys.float.Body_M'))
+            .fontColor($r('sys.color.font_secondary'))
+            .margin({ top: 4 })
+
+          Text($r('app.string.about_description'))
+            .fontSize($r('sys.float.Body_M'))
+            .fontColor($r('sys.color.font_secondary'))
+            .lineHeight(22)
+            .padding(16)
+            .width('100%')
+            .backgroundColor($r('sys.color.comp_background_list_card'))
+            .borderRadius($r('sys.float.corner_radius_level8'))
+            .margin({ top: 32 })
+        }
+        .width('100%')
+        .padding({ left: 16, right: 16, bottom: 24 })
+      }
+      .scrollBar(BarState.Off)
+      .align(Alignment.Top)
+      .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+      .width('100%')
+      .height('100%')
+    }
+    .backgroundColor($r('sys.color.background_secondary'))
+    .titleBar({
+      content: {
+        title: { mainTitle: $r('app.string.about_title') }
+      },
+      avoidLayoutSafeArea: true,
+      enableComponentSafeArea: true
+    })
+    .bindToScrollable([this.scroller])
+    .ignoreLayoutSafeArea([LayoutSafeAreaType.SYSTEM], [LayoutSafeAreaEdge.TOP, LayoutSafeAreaEdge.BOTTOM])
   }
 }

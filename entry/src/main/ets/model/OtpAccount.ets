@@ -37,3 +37,21 @@ export function defaultAccount(): OtpAccount {
     updatedAt: now
   };
 }
+
+// 浅拷贝一份账号，供编辑页修改，避免直接改动列表中的对象
+export function cloneAccount(a: OtpAccount): OtpAccount {
+  return {
+    id: a.id,
+    name: a.name,
+    note: a.note,
+    type: a.type,
+    period: a.period,
+    digits: a.digits,
+    algorithm: a.algorithm,
+    counter: a.counter,
+    iconKey: a.iconKey,
+    orderIndex: a.orderIndex,
+    createdAt: a.createdAt,
+    updatedAt: a.updatedAt
+  };
+}

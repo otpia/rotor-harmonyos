@@ -1,69 +1,76 @@
 import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS';
-import { OtpAccount, OtpType, defaultAccount } from '../model/OtpAccount';
+import { HdsNavDestination } from '@kit.UIDesignKit';
+import { OtpAccount, OtpType, cloneAccount, defaultAccount } from '../model/OtpAccount';
 import { OtpAccountStore } from '../services/OtpAccountStore';
 import { SecretVault } from '../services/SecretVault';
 import { isValidBase32, base32Normalize } from '../utils/Base32';
-import { TypeSheet } from '../components/TypeSheet';
-import { PageContainer } from '../components/PageContainer';
+import { getString } from '../utils/I18n';
+import { IssuerAvatar } from '../components/IssuerAvatar';
 
-interface EditParams {
+export interface EditParams {
   id?: string;
   prefilled?: OtpAccount;
   prefilledSecret?: string;
 }
 
-@Entry
+const PERIODS: number[] = [15, 30, 60];
+const DIGITS: number[] = [6, 8];
+const ALGORITHMS: string[] = ['SHA1', 'SHA256', 'SHA512'];
+const LABEL_WIDTH = 64;
+const ROW_HEIGHT = 56;
+
 @Component
-struct EditPage {
+export struct EditPage {
+  params: EditParams = {};
+  @Consume('pathStack') pathStack: NavPathStack;
   @State account: OtpAccount = defaultAccount();
   @State secret: string = '';
   @State isEdit: boolean = false;
-
-  typeDialog: CustomDialogController = new CustomDialogController({
-    builder: TypeSheet({
-      selected: this.account.type,
-      onSelect: (t: OtpType) => { this.account.type = t; }
-    }),
-    alignment: DialogAlignment.Bottom,
-    customStyle: true,
-    maskColor: $r('app.color.scrim')
-  });
+  @State advancedOpen: boolean = false;
+  private scroller: Scroller = new Scroller();
 
   aboutToAppear(): void {
-    const params = this.getUIContext().getRouter().getParams() as EditParams;
-    if (params && params.id) {
+    const p = this.params;
+    if (p.id) {
       this.isEdit = true;
-      if (params.prefilled) {
-        this.account = params.prefilled;
+      if (p.prefilled) {
+        this.account = cloneAccount(p.prefilled);
       }
-      SecretVault.get(params.id).then((s: string) => { this.secret = s; }).catch(() => { this.secret = ''; });
-    } else if (params && params.prefilled) {
-      this.account = params.prefilled;
-      this.secret = params.prefilledSecret || '';
+      SecretVault.get(p.id).then((s: string) => {
+        this.secret = s;
+      }).catch(() => {
+        this.secret = '';
+      });
+    } else if (p.prefilled) {
+      this.account = cloneAccount(p.prefilled);
+      this.secret = p.prefilledSecret || '';
     }
   }
 
-  private valid(): boolean {
-    if (!this.account.name || this.account.name.length === 0) return false;
-    if (!isValidBase32(this.secret)) return false;
-    return true;
+  private ctx(): common.UIAbilityContext {
+    return this.getUIContext().getHostContext() as common.UIAbilityContext;
+  }
+
+  private toast(msg: ResourceStr): void {
+    try {
+      this.getUIContext().getPromptAction().showToast({ message: msg });
+    } catch (e) {
+      console.error('[EditPage.toast]', e);
+    }
   }
 
   private async save(): Promise<void> {
     try {
-      if (!this.valid()) {
-        const msg = !this.account.name
-          ? $r('app.string.name_required')
-          : $r('app.string.secret_invalid');
-        try {
-          this.getUIContext().getPromptAction().showToast({ message: msg });
-        } catch (e) {
-          console.error('[EditPage.save] showToast failed', e);
-        }
+      if (this.account.name.length === 0) {
+        this.toast($r('app.string.name_required'));
         return;
       }
-      const ctx = this.getUIContext().getHostContext() as common.UIAbilityContext;
+      if (!isValidBase32(this.secret)) {
+        this.toast($r('app.string.secret_invalid'));
+        return;
+      }
+      const ctx = this.ctx();
       const now = Date.now();
       if (!this.isEdit) {
         this.account.id = util.generateRandomUUID(false);
@@ -77,120 +84,239 @@ struct EditPage {
       } else {
         await OtpAccountStore.insert(ctx, this.account);
       }
-      this.getUIContext().getRouter().back();
+      this.pathStack.pop();
     } catch (e) {
       console.error('[EditPage.save]', e);
     }
   }
 
-  @Builder NavButton(symbol: Resource, onTap: () => void) {
-    Stack() {
-      SymbolGlyph(symbol)
-        .fontSize(24)
-        .fontColor([$r('app.color.text_primary')])
-    }
-    .width(40).height(40)
-    .onClick(onTap)
+  // ---------- 下拉选项 ----------
+
+  private typeOptions(): SelectOption[] {
+    const out: SelectOption[] = [];
+    out.push({ value: $r('app.string.type_totp') });
+    out.push({ value: $r('app.string.type_hotp') });
+    return out;
   }
 
-  @Builder Field(label: Resource, value: string, onChange: (v: string) => void) {
+  private periodOptions(): SelectOption[] {
+    const ctx = this.ctx();
+    const out: SelectOption[] = [];
+    for (const p of PERIODS) {
+      out.push({ value: getString(ctx, 'period_seconds', p) });
+    }
+    return out;
+  }
+
+  private digitsOptions(): SelectOption[] {
+    const ctx = this.ctx();
+    const out: SelectOption[] = [];
+    for (const d of DIGITS) {
+      out.push({ value: getString(ctx, 'digits_count', d) });
+    }
+    return out;
+  }
+
+  private algorithmOptions(): SelectOption[] {
+    const out: SelectOption[] = [];
+    for (const a of ALGORITHMS) {
+      out.push({ value: a });
+    }
+    return out;
+  }
+
+  private setAlgorithm(index: number): void {
+    if (index === 1) {
+      this.account.algorithm = 'SHA256';
+    } else if (index === 2) {
+      this.account.algorithm = 'SHA512';
+    } else {
+      this.account.algorithm = 'SHA1';
+    }
+  }
+
+  private indexOrZero(list: number[], v: number): number {
+    const i = list.indexOf(v);
+    return i < 0 ? 0 : i;
+  }
+
+  // ---------- 行构建器 ----------
+
+  @Styles cardStyle() {
+    .backgroundColor($r('sys.color.comp_background_list_card'))
+    .borderRadius($r('sys.float.corner_radius_level8'))
+    .width('100%')
+  }
+
+  @Builder InputRow(label: Resource, value: string, inputType: InputType, onChange: (v: string) => void) {
     Row() {
-      Text(label).fontSize(18).fontColor($r('app.color.text_primary')).width(60)
+      Text(label)
+        .fontSize($r('sys.float.Body_L'))
+        .fontColor($r('sys.color.font_primary'))
+        .width(LABEL_WIDTH)
       TextInput({ text: value })
-        .fontSize(18)
-        .fontColor($r('app.color.text_primary'))
-        .placeholderColor($r('app.color.text_placeholder'))
+        .type(inputType)
+        .fontSize($r('sys.float.Body_L'))
         .backgroundColor(Color.Transparent)
-        .caretStyle({ width: 2, color: $r('app.color.accent_blue') })
-        .caretColor($r('app.color.accent_blue'))
-        .padding(0)
+        .padding({ left: 0, right: 0 })
+        .height(40)
         .layoutWeight(1)
-        .height(50)
         .onChange(onChange)
     }
-    .padding({ left: 24, right: 24 })
+    .width('100%')
+    .height(ROW_HEIGHT)
+    .padding({ left: 16, right: 16 })
     .alignItems(VerticalAlign.Center)
   }
 
-  @Builder PageBody() {
-    Column() {
-      Row() {
-        this.NavButton($r('sys.symbol.xmark'), () => this.getUIContext().getRouter().back())
-        Text(this.isEdit ? $r('app.string.edit_title') : $r('app.string.add_title'))
-          .fontSize(20)
-          .fontWeight(FontWeight.Bold)
-          .fontColor($r('app.color.text_primary'))
-          .margin({ left: 8 })
-          .layoutWeight(1)
-        this.NavButton($r('sys.symbol.checkmark'), () => this.save())
-      }
-      .height(56)
-      .width('100%')
-      .padding({ left: 16, right: 16 })
-      .alignItems(VerticalAlign.Center)
+  @Builder SelectRow(label: Resource, options: SelectOption[], selectedIndex: number, valueText: ResourceStr,
+    onSelect: (i: number) => void) {
+    Row() {
+      Text(label)
+        .fontSize($r('sys.float.Body_L'))
+        .fontColor($r('sys.color.font_primary'))
+        .layoutWeight(1)
+      Select(options)
+        .selected(selectedIndex)
+        .value(valueText)
+        .font({ size: $r('sys.float.Body_L') })
+        .fontColor($r('sys.color.font_secondary'))
+        .backgroundColor(Color.Transparent)
+        .onSelect((i: number) => {
+          onSelect(i);
+        })
+    }
+    .width('100%')
+    .height(ROW_HEIGHT)
+    .padding({ left: 16, right: 8 })
+    .alignItems(VerticalAlign.Center)
+  }
 
-      Column() {
-        Image($r('app.media.edit_avatar')).width(80).height(80)
-      }
-      .margin({ top: 64, bottom: 64 })
-
-      Column() {
-        this.Field($r('app.string.label_name'), this.account.name, (v: string) => { this.account.name = v; })
-        this.Field($r('app.string.label_note'), this.account.note, (v: string) => { this.account.note = v; })
-      }
-      .padding({ top: 4, bottom: 4 })
-      .backgroundColor($r('app.color.bg_card'))
-      .borderRadius(20)
-      .margin({ left: 8, right: 8, bottom: 8 })
-
-      Column() {
-        this.Field($r('app.string.label_secret'), this.secret, (v: string) => { this.secret = v; })
-      }
-      .padding({ top: 4, bottom: 4 })
-      .backgroundColor($r('app.color.bg_card'))
-      .borderRadius(20)
-      .margin({ left: 8, right: 8, bottom: 8 })
-
-      Column() {
-        Row() {
-          Text($r('app.string.label_type')).fontSize(18).fontColor($r('app.color.text_primary')).width(60)
-          Text(this.account.type === OtpType.TOTP ? $r('app.string.type_totp') : $r('app.string.type_hotp'))
-            .fontSize(18)
-            .fontColor($r('app.color.text_secondary'))
-            .layoutWeight(1)
-            .textAlign(TextAlign.End)
-          SymbolGlyph($r('sys.symbol.chevron_right'))
-            .fontSize(24)
-            .fontColor([$r('app.color.text_secondary')])
-            .margin({ left: 8 })
-        }
-        .height(50)
-        .padding({ left: 24, right: 24 })
-        .onClick(() => this.typeDialog.open())
-      }
-      .padding({ top: 4, bottom: 4 })
-      .backgroundColor($r('app.color.bg_card'))
-      .borderRadius(20)
-      .margin({ left: 8, right: 8 })
-
-      if (this.account.type === OtpType.HOTP) {
-        Column() {
-          this.Field($r('app.string.label_counter'), String(this.account.counter), (v: string) => {
-            const n = parseInt(v);
-            this.account.counter = isNaN(n) ? 0 : n;
-          })
-        }
-        .padding({ top: 4, bottom: 4 })
-        .backgroundColor($r('app.color.bg_card'))
-        .borderRadius(20)
-        .margin({ left: 8, right: 8, top: 8 })
-      }
-    }.width('100%').height('100%')
+  @Builder RowDivider(indent: number) {
+    Divider()
+      .color($r('sys.color.comp_divider'))
+      .strokeWidth(0.5)
+      .margin({ left: indent, right: 16 })
   }
 
   build() {
-    Stack() {
-      PageContainer({ content: () => { this.PageBody() } })
-    }.width('100%').height('100%')
+    HdsNavDestination() {
+      Scroll(this.scroller) {
+        Column({ space: 12 }) {
+          IssuerAvatar({ name: this.account.name, diameter: 72 })
+            .margin({ top: 12, bottom: 12 })
+
+          Column() {
+            this.InputRow($r('app.string.label_name'), this.account.name, InputType.Normal, (v: string) => {
+              this.account.name = v;
+            })
+            this.RowDivider(16 + LABEL_WIDTH)
+            this.InputRow($r('app.string.label_note'), this.account.note, InputType.Normal, (v: string) => {
+              this.account.note = v;
+            })
+          }
+          .cardStyle()
+
+          Column() {
+            this.InputRow($r('app.string.label_secret'), this.secret, InputType.Normal, (v: string) => {
+              this.secret = v;
+            })
+          }
+          .cardStyle()
+
+          Column() {
+            this.SelectRow($r('app.string.label_type'), this.typeOptions(),
+              this.account.type === OtpType.TOTP ? 0 : 1,
+              this.account.type === OtpType.TOTP ? $r('app.string.type_totp') : $r('app.string.type_hotp'),
+              (i: number) => {
+                this.account.type = i === 1 ? OtpType.HOTP : OtpType.TOTP;
+              })
+            if (this.account.type === OtpType.HOTP) {
+              this.RowDivider(16)
+              this.InputRow($r('app.string.label_counter'), String(this.account.counter), InputType.Number,
+                (v: string) => {
+                  const n = parseInt(v);
+                  this.account.counter = isNaN(n) ? 0 : n;
+                })
+            }
+          }
+          .cardStyle()
+
+          Column() {
+            Row() {
+              Text($r('app.string.advanced_options'))
+                .fontSize($r('sys.float.Body_L'))
+                .fontColor($r('sys.color.font_primary'))
+                .layoutWeight(1)
+              SymbolGlyph(this.advancedOpen ? $r('sys.symbol.chevron_up') : $r('sys.symbol.chevron_down'))
+                .fontSize(20)
+                .fontColor([$r('sys.color.icon_secondary')])
+            }
+            .width('100%')
+            .height(ROW_HEIGHT)
+            .padding({ left: 16, right: 16 })
+            .alignItems(VerticalAlign.Center)
+            .onClick(() => {
+              this.getUIContext().animateTo({ duration: 200 }, () => {
+                this.advancedOpen = !this.advancedOpen;
+              });
+            })
+
+            if (this.advancedOpen) {
+              this.RowDivider(16)
+              this.SelectRow($r('app.string.label_period'), this.periodOptions(),
+                this.indexOrZero(PERIODS, this.account.period),
+                getString(this.ctx(), 'period_seconds', this.account.period),
+                (i: number) => {
+                  this.account.period = PERIODS[i];
+                })
+              this.RowDivider(16)
+              this.SelectRow($r('app.string.label_digits'), this.digitsOptions(),
+                this.indexOrZero(DIGITS, this.account.digits),
+                getString(this.ctx(), 'digits_count', this.account.digits),
+                (i: number) => {
+                  this.account.digits = DIGITS[i];
+                })
+              this.RowDivider(16)
+              this.SelectRow($r('app.string.label_algorithm'), this.algorithmOptions(),
+                Math.max(0, ALGORITHMS.indexOf(this.account.algorithm)),
+                this.account.algorithm,
+                (i: number) => {
+                  this.setAlgorithm(i);
+                })
+            }
+          }
+          .cardStyle()
+        }
+        .width('100%')
+        .padding({ left: 16, right: 16, bottom: 24 })
+      }
+      .scrollBar(BarState.Off)
+      .align(Alignment.Top)
+      .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+      .width('100%')
+      .height('100%')
+    }
+    .backgroundColor($r('sys.color.background_secondary'))
+    .titleBar({
+      content: {
+        title: { mainTitle: this.isEdit ? $r('app.string.edit_title') : $r('app.string.add_title') },
+        menu: {
+          value: [{
+            content: {
+              icon: $r('sys.symbol.checkmark'),
+              label: $r('app.string.btn_save'),
+              action: () => {
+                this.save();
+              }
+            }
+          }]
+        }
+      },
+      avoidLayoutSafeArea: true,
+      enableComponentSafeArea: true
+    })
+    .bindToScrollable([this.scroller])
+    .ignoreLayoutSafeArea([LayoutSafeAreaType.SYSTEM], [LayoutSafeAreaEdge.TOP, LayoutSafeAreaEdge.BOTTOM])
   }
 }

@@ -21,9 +21,9 @@ export struct ProgressRing {
     this.remaining = this.period - (sec % this.period);
   }
 
-  // 颜色分段：>5s 主色，≤5s 红
+  // 颜色分段：>5s 次要图标色，<=5s 警示色
   private color(): Resource {
-    return this.remaining <= 5 ? $r('app.color.ring_danger') : $r('app.color.ring_normal');
+    return this.remaining <= 5 ? $r('sys.color.warning') : $r('sys.color.icon_secondary');
   }
 
   build() {

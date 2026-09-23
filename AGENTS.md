@@ -1,47 +1,49 @@
 # rotor-harmonyos 项目规则
 
 ## 平台
-- HarmonyOS NEXT，API 23（compatibleSdkVersion 6.1.0），ArkTS + ArkUI 声明式
-- Bundle: `com.liasica.rotor`
-- 包名前缀：`com.liasica.rotor`
+- HarmonyOS NEXT，ArkTS + ArkUI 声明式；SDK 版本以 `build-profile.json5` 为准
+- Bundle：`com.liasica.rotor`
 
-## 设计来源
-- Sketch 文件：`Authenticator 1217.sketch`（已在 sketch MCP `http://localhost:31126/mcp` 中打开）作为视觉设计参考。
-- 大盘视觉（布局、字号、间距、颜色 token）尽量贴近 sketch；细节可结合 HarmonyOS 设计语言（沉浸光感、SurfaceMaterial、HdsTabs 等）合理调整，不要求 sketch 先更新。
-- 图标素材优先从 sketch 导出 3x png（`scales: '3'`）放入 `entry/src/main/resources/base/media/`，再用 `Image($r('app.media.xxx'))` 引用；如 sketch 缺合适素材，可用 ArkUI 几何元素或 `SymbolGlyph` 自绘补齐。
-- 沉浸光感场景下如果原素材带不透明实色背景（如蓝色 FAB 按钮），可保留原素材并跳过 `backgroundBlurStyle`——光感对实色 PNG 无视觉效果。
+## 设计规范
+- 视觉与交互按 HarmonyOS 官方 UI Design Kit（HDS 组件）与沉浸光感规范实现，不参考外部设计稿
+- 颜色、字号、圆角、间距一律用系统资源 `$r('sys.color.*')`、`$r('sys.float.*')`，不自定义颜色 token，深浅色由系统资源自动适配
+- 界面图标用 `SymbolGlyph($r('sys.symbol.*'))`；issuer 品牌图标为 `media` 下的 PNG，未命中时用 `IssuerAvatar` 首字母头像
+- 页面结构：`Index` 为 `HdsNavigation` 根，二级页为 `HdsNavDestination`，通过 `NavPathStack` 路由；首页标题栏为大标题加常驻搜索框（`bottomBuilder`，随上滑收起），操作全部收在 `HdsTabs` 悬浮栏（智感握姿跟手），其中「搜索」为回顶并聚焦搜索框
+- 二级页返回首页的刷新统一走 `NavPathStack.setInterception.didShow`，不要依赖 `pushPathByName` 的 `onPop`（`pop(true)` 会匹配 `pop(animated)` 重载，不触发回调）
+- 弹窗一律用系统能力：`AlertDialog`、`bindMenu`、`bindSheet`、`Select`、`showToast`，不自绘弹窗
 
 ## 调试流程
-- 开发完一个功能（commit 后）必须用 hdc 真机/模拟器验证：
+- 命令行编译前先设置环境。hvigor 取 PATH 里的 `java`，必须指向 DevEco 自带的 JBR：
   ```bash
-  export PATH="/Users/liasica/Library/OpenHarmony/Sdk/23/toolchains:$PATH"
-  hvigorw 编译 → hdc install -r → hdc shell aa force-stop com.liasica.rotor → hdc shell aa start -a EntryAbility -b com.liasica.rotor
+  export DEVECO_SDK_HOME=/Applications/DevEco-Studio.app/Contents/sdk
+  export JAVA_HOME=/Applications/DevEco-Studio.app/Contents/jbr/Contents/Home
+  export PATH="$JAVA_HOME/bin:/Applications/DevEco-Studio.app/Contents/sdk/default/openharmony/toolchains:$PATH"
+  ```
+- 编译命令：`/Applications/DevEco-Studio.app/Contents/tools/node/bin/node /Applications/DevEco-Studio.app/Contents/tools/hvigor/bin/hvigorw.js --mode module -p module=entry@default -p product=device -p requiredDeviceType=phone assembleHap --analyze=normal --parallel --incremental --daemon`。`product=device` 用调试证书（profile 内含真机 UDID，模拟器也可装），产物在 `entry/build/device/outputs/default/`；发布包用 `product=default`（AppGallery 发布证书，不能 hdc 侧载）
+- 签名阶段报 `Invalid CEN header` 时，先 `hvigorw.js --stop-daemon` 并 `pkill -f hvigor-java-daemon`，再重新编译（守护进程持有已被替换的工具 jar）
+- 开发完一个功能（commit 后）必须用 hdc 真机验证：
+  ```bash
+  hdc install -r entry/build/device/outputs/default/entry-default-signed.hap
+  hdc shell aa force-stop com.liasica.rotor && hdc shell aa start -a EntryAbility -b com.liasica.rotor
   hdc shell snapshot_display -f /data/local/tmp/r.jpeg && hdc file recv /data/local/tmp/r.jpeg /tmp/rotor-screen.jpeg
   ```
 - 抓 console 日志：`hdc shell hilog -x | grep <PID> | grep JSAPP`
-- hdc 路径：`/Users/liasica/Library/OpenHarmony/Sdk/23/toolchains/hdc`
-- 编译命令：`/Applications/DevEco-Studio.app/Contents/tools/node/bin/node /Applications/DevEco-Studio.app/Contents/tools/hvigor/bin/hvigorw.js --mode module -p module=entry@default -p product=default -p requiredDeviceType=phone assembleHap --analyze=normal --parallel --incremental --daemon`
+- 控件树与自动点击：`hdc shell uitest dumpLayout -p /data/local/tmp/l.json` 导出后按文字找坐标，`hdc shell uitest uiInput click x y` 点击；HDS 标题栏图标按钮没有文字，按 `SymbolGlyph` 位置定位
+- 已装的应用签名与新包不一致时会报 `install sign info inconsistent`，只能卸载重装，真机上先导出备份
 
 ## ArkTS 注意
-- 系统 API（router / promptAction / getContext）已弃用——统一通过 `this.getUIContext().getRouter() / .getPromptAction() / .getHostContext()` 调用
+- 系统 API（router / promptAction / getContext）已弃用，统一通过 `this.getUIContext().getRouter() / .getPromptAction() / .getHostContext()` 调用
 - HMAC：`cryptoFramework.createMac(algo)`（'SHA1' 不带 HMAC 前缀），`cryptoFramework.createSymKeyGenerator('HMAC')`
 - Asset Kit：`Map<asset.Tag, asset.Value>` 用 `asset.AssetMap = new Map()`，value 直接传 `Uint8Array`，不要 `.buffer as object`
-- 全屏窗口：EntryAbility.onWindowStageCreate 中 `windowStage.getMainWindowSync().setWindowLayoutFullScreen(true)`，page 根容器加 `.expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])`
+- 全屏窗口：EntryAbility.onWindowStageCreate 中 `setWindowLayoutFullScreen(true)`，页面根 `HdsNavigation` / `HdsNavDestination` 加 `.ignoreLayoutSafeArea([LayoutSafeAreaType.SYSTEM], [LayoutSafeAreaEdge.TOP, LayoutSafeAreaEdge.BOTTOM])`，标题栏配置 `enableComponentSafeArea: true` 让内容避让
 - ArkTS 严格模式："Function may throw exceptions" warning 必须用 try/catch 清掉；rethrow 不能直接 `throw e`，要 `throw new Error(String(e))`
+- 自定义组件的属性名不能与通用属性同名（如 `size`、`width`），否则报 not assignable
+- 带参 @Builder 传给 @BuilderParam 写 `() => { this.X(a) }`；`bindMenu` 与 `navDestination` 传 builder 引用不加括号，`tabBar`、`bindSheet` 传 builder 调用加括号
 
-## 关键文件路径
-- Sketch 中心 frame ID：
-  - appicon: `1E024F09-F8E1-4EAB-962D-FACBD89F3631`
-  - 首页 light: `807C53E8-55A0-4ABD-9F53-031BE290A783`
-  - 首页 dark: `1439A902-17DF-4898-ACD4-A52E852FD4F0`
-  - 编辑/添加 light: `FEE3020A-AFF5-48D7-8BC2-29988E25C64B`
-  - 加号菜单 light: `350D412F-A718-447A-B849-D2F826926183`
-  - 操作菜单 light: `B2821546-3D33-4FA3-861E-E3C02072C149`
-  - 搜索 light: `985FB2A1-EF58-448B-89FE-09EE949BCDFD`
-  - 弹出控件 light: `7B9212E3-B5B1-46BA-90F4-D842E56D64DB`
-  - 导出验证码: `E482A51A-3119-44BC-A36E-972F0312A7BF`
-  - 删除对话框: `14F2409D-0AB3-440F-8068-30E2F57B10E0`
-  - 单条操作左滑 light: `1C8197AE-E381-4CDA-80CA-B6FCC729D35B`
-  - 单条操作右滑 light: `670D271A-AE94-4693-AE98-7588420E351D`
-- Spec：`docs/superpowers/specs/2026-04-25-authenticator-design.md`
-- Plan：`docs/superpowers/plans/2026-04-25-authenticator-mvp.md`
+## 关键文件
+- `pages/Index.ets`：首页、路由表、底部悬浮栏、搜索态、导入备份
+- `pages/EditPage.ets`：添加与编辑（含高级选项）
+- `pages/ManagePage.ets`：多选编辑（批量删除、加密导出）
+- `pages/AboutPage.ets`：关于
+- `services/ScanService.ets`：扫码与 Google Authenticator 迁移导入
+- `components/OtpCard.ets`、`IssuerAvatar.ets`、`ProgressRing.ets`、`PasswordSheet.ets`

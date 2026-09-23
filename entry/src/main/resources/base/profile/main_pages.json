@@ -1,9 +1,5 @@
 {
   "src": [
-    "pages/Index",
-    "pages/EditPage",
-    "pages/ScanPage",
-    "pages/AboutPage",
-    "pages/ExportPage"
+    "pages/Index"
   ]
 }

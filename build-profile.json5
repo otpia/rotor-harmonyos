@@ -5,26 +5,26 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "storeFile": "/Users/liasica/Documents/工作/rotor/keys/release/rotor_release.p12",
-          "storePassword": "0000001AFD5446D1A663F36FB0C9A1AC856BC0BC756CC490886E618CD4F0B2D8E9110EF9CC12E6B2FCAF",
+          "certpath": "/Users/liasica/Documents/工作/rotor/keys/release/rotor_release.cer",
           "keyAlias": "releaseKey",
-          "keyPassword": "0000001AD16ACE8C1D3035F06F10C511B78CB3904409D9A2A078C454641C92576EF381E709FAF08A1811",
-          "signAlg": "SHA256withECDSA",
+          "keyPassword": "0000001A1E023F3C32B80C071B0F07695293027C1335DEF848145C154812DBC07E500D48A83209D967A8",
           "profile": "/Users/liasica/Documents/工作/rotor/keys/release/RotorRelease.p7b",
-          "certpath": "/Users/liasica/Documents/工作/rotor/keys/release/rotor_release.cer"
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "/Users/liasica/Documents/工作/rotor/keys/release/rotor_release.p12",
+          "storePassword": "0000001A349051141247A06F2CF3B0F5E63B7D64ADB8AD536A65AB8642D1F1228F7F36245FCE635FADD8"
         }
       },
       {
         "name": "device",
         "type": "HarmonyOS",
         "material": {
-          "certpath": "/Users/liasica/.ohos/config/device_rotor-harmonyos_gSiSlFCGAwHb-Bx4lVzVQH88lAHdUGtN3hzehN8zda0=.cer",
+          "certpath": "/Users/liasica/.ohos/config/device_rotor-harmonyos_XRq8R43CbZMgkpi2i6WV9uca7jeEt2XRPOwpgyTWaMc=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001B54E26F62E02D34528B5D1898DFE223D1330E9BC21226BDAEA2624F822861AC310F1758709F0BA0",
-          "profile": "/Users/liasica/.ohos/config/device_rotor-harmonyos_gSiSlFCGAwHb-Bx4lVzVQH88lAHdUGtN3hzehN8zda0=.p7b",
+          "keyPassword": "0000001B80FBDE9D8472CF0D4FF6C4321E12CD4C598E1B40CFCCCA6F5B26F7350A93834E071D46AF840F85",
+          "profile": "/Users/liasica/.ohos/config/device_rotor-harmonyos_XRq8R43CbZMgkpi2i6WV9uca7jeEt2XRPOwpgyTWaMc=.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "/Users/liasica/.ohos/config/device_rotor-harmonyos_gSiSlFCGAwHb-Bx4lVzVQH88lAHdUGtN3hzehN8zda0=.p12",
-          "storePassword": "0000001B5C6157ED8E590D012583CD10269EB737829A70246BDD8EDA8E5D44422D1AA52A7716D2D0651365"
+          "storeFile": "/Users/liasica/.ohos/config/device_rotor-harmonyos_XRq8R43CbZMgkpi2i6WV9uca7jeEt2XRPOwpgyTWaMc=.p12",
+          "storePassword": "0000001B827F65957ADA7A056C49C7C229BC2C9043761388C9CEF48524A56273B7F7A60C02367FFB4568DD"
         }
       }
     ],
@@ -33,7 +33,7 @@
         "name": "default",
         "signingConfig": "default",
         "targetSdkVersion": "6.1.0(23)",
-        "compatibleSdkVersion": "5.0.0(12)",
+        "compatibleSdkVersion": "6.1.0(23)",
         "runtimeOS": "HarmonyOS",
         "buildOption": {
           "strictMode": {
@@ -46,7 +46,7 @@
         "name": "device",
         "signingConfig": "device",
         "targetSdkVersion": "6.1.0(23)",
-        "compatibleSdkVersion": "5.0.0(12)",
+        "compatibleSdkVersion": "6.1.0(23)",
         "runtimeOS": "HarmonyOS",
         "buildOption": {
           "strictMode": {
