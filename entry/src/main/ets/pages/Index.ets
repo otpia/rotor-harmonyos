@@ -637,6 +637,10 @@ struct Index {
           ListItem() {
             this.CardBuilder(a)
           }
+          // 拖拽浮起时框架把 ListItem 放大 1.05 倍并按其圆角画阴影：圆角需与卡片一致，
+          // 左右留白放在 ListItem 上而不是 List 的 padding，否则放大后的卡片会被 List 内容区裁掉
+          .borderRadius($r('sys.float.corner_radius_level8'))
+          .margin({ left: 16, right: 16 })
           .swipeAction({
             end: {
               builder: () => {
@@ -652,7 +656,6 @@ struct Index {
       }
       .width('100%')
       .height('100%')
-      .padding({ left: 16, right: 16 })
       .scrollBar(BarState.Off)
       .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
       .contentEndOffset(LIST_END_OFFSET)
