@@ -35,7 +35,7 @@
     { "name": "edit_title", "value": "编辑" },
     { "name": "add_title", "value": "添加" },
     { "name": "about_title", "value": "关于" },
-    { "name": "about_description", "value": "Rotor 是一款本地优先的双因素验证码 App，遵循 RFC 6238。密钥仅保存在本机的系统级凭据库中，不会上传到任何服务器。" },
+    { "name": "about_description", "value": "Rotor 是一款本地优先的双因素验证码 App，遵循 RFC 6238。密钥保存在本机应用数据库中；开启云同步后，密钥存入你的华为云空间，在登录同一华为账号的设备间同步。" },
     { "name": "empty_hint", "value": "点击底部「添加」添加账号" },
     { "name": "selected_count", "value": "已选择 %d 项" },
     { "name": "delete_confirm_message", "value": "是否删除「%s」？" },

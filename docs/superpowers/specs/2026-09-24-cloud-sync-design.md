@@ -77,7 +77,7 @@ const CONFIG: relationalStore.StoreConfig = {
 };
 ```
 
-- `securityLevel` 从 S2 提到 S3。官方规定安全等级只能升不能降；S3 允许端云同步，S4 不允许。
+- `securityLevel` 从 S2 提到 S3。官方规定安全等级只能升不能降；S3 允许端云同步，S4 不允许。现网 S2 库直接以 S3 配置开库即完成升级，不报 14800017。
 - `encrypt` 不设置，保持非加密库（D4）。
 - `autoCleanDirtyData` 不设置，保持默认 true：云端删除的行同步到本机时自动删除。
 
@@ -124,6 +124,8 @@ const CONFIG: relationalStore.StoreConfig = {
 
 `entry/src/main/module.json5` 的 `requestPermissions` 增加 `ohos.permission.GET_NETWORK_INFO`（系统自动授予的普通权限，只需 `name`，供 5.6 网络监听使用）。
 
+`setDistributedTables` 的接口注解标有 `ohos.permission.DISTRIBUTED_DATASYNC`，编译时会出权限提示；端云类型（`DISTRIBUTED_CLOUD`）在 API 12 起运行时不需要该权限，不声明。
+
 ### 5.2 AGC 云侧配置
 
 一次性手工操作，开发环境与生产环境各做一次（先开发环境调通，再「实施变更到生产环境」，实施后字段只能加不能改删）：
@@ -159,9 +161,12 @@ export enum CloudSyncState { OFF, SYNCING, SYNCED, DISCONNECTED }
 
 export interface CloudSyncStatus {
   state: CloudSyncState;
-  code: number;        // 最近一次同步结束时的 ProgressCode，未同步过或调用抛异常为 -1
+  code: number;        // 最近一次同步结束时的 ProgressCode；本进程尚未完成首次同步为 CODE_PENDING（-2），调用抛异常或超时为 CODE_FAILED（-1）
+  online: boolean;     // 默认网络是否可用
   lastSyncAt: number;  // 最近一次成功同步的时间戳，0 表示从未成功
 }
+
+export function syncStateSymbol(state: CloudSyncState): Resource;   // 状态对应的 sys.symbol 图标
 
 class CloudSyncService {
   init(ctx): Promise<void>;                      // 冷启动调用
@@ -172,12 +177,14 @@ class CloudSyncService {
   status(): CloudSyncStatus;
   onStatusChange(cb: (s: CloudSyncStatus) => void): () => void;   // 返回取消函数
   onCloudDataChange(cb: () => void): () => void;                  // 返回取消函数
+  guideShown(ctx): Promise<boolean>;             // 首次开启引导弹窗是否已出现过
+  markGuideShown(ctx): Promise<void>;
   release(): void;                               // 进程退出时调用：取消订阅、注销网络监听
 }
 ```
 
-- `init`：读 preferences；开关为开时，调 `setDistributedTables(['otp_account'], DISTRIBUTED_CLOUD, { autoSync: true })`（幂等，保证配置存在）、注册云端变更订阅、启动网络监听、调一次 `syncNow(ctx, false)`。开关为关时只读状态，不做其他事。
-- `enable`：调 `setDistributedTables(['otp_account'], DISTRIBUTED_CLOUD, { autoSync: true })`，成功后记开关为开，注册云端变更订阅，启动网络监听，调 `syncNow(ctx, true)`。`setDistributedTables` 失败则保持关闭状态并向调用方抛出，页面据此提示「开启失败」。首次 `setDistributedTables` 后系统自动把本地已有行全部上传；手动同步用时间优先模式合并云端已有数据（另一台设备先开启的情况）。
+- `init`：读 preferences；开关为开时，调 `setDistributedTables(['otp_account'], DISTRIBUTED_CLOUD, { autoSync: true })`（幂等，保证配置存在）、注册云端变更订阅、启动网络监听、调一次 `syncNow(ctx, false)`。开关为关且 preferences 里明确记过关闭时，重新下发一次 `{ autoSync: false, enableCloud: false }`，保证关闭状态在系统侧生效；从未开启过则不做其他事。
+- `enable`：调 `setDistributedTables(['otp_account'], DISTRIBUTED_CLOUD, { autoSync: true, enableCloud: true })`，成功后记开关为开，注册云端变更订阅，启动网络监听，调 `syncNow(ctx, true)`。`setDistributedTables` 失败则保持关闭状态并向调用方抛出，页面据此提示「开启失败」。首次 `setDistributedTables` 后系统自动把本地已有行全部上传；手动同步用时间优先模式合并云端已有数据（另一台设备先开启的情况）。
 - `disable`：调 `setDistributedTables(['otp_account'], DISTRIBUTED_CLOUD, { autoSync: false, enableCloud: false })`，记开关为关，取消云端变更订阅，停止网络监听，状态置 `OFF`。调用失败则保持开启状态并向调用方抛出，页面据此提示「关闭失败」。本地数据不动，云端数据保留；删除云端数据由用户在系统云空间的「停止同步并删除云端数据」完成。
 - `syncNow`：`store.cloudSync(SyncMode.SYNC_MODE_TIME_FIRST, ['otp_account'], progress)`（Promise 版）。`manual` 为 false 且距上次实际执行不足 30 秒直接返回，避免被云端限流，防抖计时只保存在内存里，进程启动后的第一次调用总会执行；`manual` 为 true 不受防抖限制，但同步进行中再次调用直接返回。进度回调里 `schedule` 为 `SYNC_FINISH` 时取 `code`，`SUCCESS` 则更新 `lastSyncAt` 并写入 preferences。
 - 所有 relationalStore 与 preferences 调用都包 try/catch，异常记 `console.error` 并把状态置为 `DISCONNECTED`、`code = -1`。
@@ -188,7 +195,7 @@ class CloudSyncService {
 | 状态 | 条件 |
 | --- | --- |
 | `OFF` | 开关为关 |
-| `SYNCING` | 有一次 `cloudSync` 调用在进行中 |
+| `SYNCING` | 有一次 `cloudSync` 调用在进行中，或本进程尚未完成首次同步且网络可用（冷启动与刚开启时总会立即同步一次） |
 | `SYNCED` | 网络可用，且最近一次 `cloudSync` 结束码为 `SUCCESS` |
 | `DISCONNECTED` | 开关为开且不满足上面两条：网络不可用，或最近一次结束码不是 `SUCCESS`，或调用抛异常 |
 
@@ -346,6 +353,7 @@ class CloudSyncService {
 | 位置 | 新文案 |
 | --- | --- |
 | 大标题 | 多设备 · 同一套验证码 |
+| 盾牌内图形 | 白色云朵加蓝色对勾 |
 | 副标题 | 华为云空间同步 · 同账号设备自动一致 |
 | 中部标题 | 本地优先 · 同步可选 |
 | 中部说明 | 不开同步，数据不出本机 |

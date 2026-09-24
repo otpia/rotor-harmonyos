@@ -35,7 +35,7 @@
     { "name": "edit_title", "value": "Edit" },
     { "name": "add_title", "value": "Add" },
     { "name": "about_title", "value": "About" },
-    { "name": "about_description", "value": "Rotor is a local-first 2FA app following RFC 6238. Secrets are stored only in the system credential store and never uploaded." },
+    { "name": "about_description", "value": "Rotor is a local-first 2FA app following RFC 6238. Secrets are stored in the app's local database on this device. With cloud sync on, they are stored in your Huawei Cloud and synced across devices signed in with the same HUAWEI ID." },
     { "name": "empty_hint", "value": "Tap Add at the bottom to add an account" },
     { "name": "selected_count", "value": "%d selected" },
     { "name": "delete_confirm_message", "value": "Delete \"%s\"?" },

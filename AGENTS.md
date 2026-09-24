@@ -8,13 +8,22 @@
 - 视觉与交互按 HarmonyOS 官方 UI Design Kit（HDS 组件）与沉浸光感规范实现，不参考外部设计稿
 - 颜色、字号、圆角、间距一律用系统资源 `$r('sys.color.*')`、`$r('sys.float.*')`，不自定义颜色 token，深浅色由系统资源自动适配
 - 界面图标用 `SymbolGlyph($r('sys.symbol.*'))`；issuer 品牌图标为 `media` 下的 PNG，未命中时用 `IssuerAvatar` 首字母头像
-- 页面结构：`Index` 为 `HdsNavigation` 根，二级页为 `HdsNavDestination`，通过 `NavPathStack` 路由；首页标题栏只放大标题，操作全部收在 `HdsTabs` 悬浮栏（智感握姿跟手）一个胶囊里：「搜索」「添加」「更多」。点「搜索」时悬浮栏 `applyHideAnimation` 收起，底部原位以弹簧过渡（`curves.interpolatingSpring(0, 1, 200, 17)` 进、`170, 17` 出）弹出同形态的白色胶囊搜索框加「取消」，取消后 `applyShowAnimation` 恢复；不用 HdsTabs 迷你栏（它天生是挂在页签栏旁边的独立小圆，做不成一体）
+- 页面结构：`Index` 为 `HdsNavigation` 根，二级页为 `HdsNavDestination`，通过 `NavPathStack` 路由；首页标题栏放大标题，右上角只放一个云同步状态图标（`titleBar.content.menu`，未开启云同步时为空，点击进入云同步页），其余操作全部收在 `HdsTabs` 悬浮栏（智感握姿跟手）一个胶囊里：「搜索」「添加」「更多」。点「搜索」时悬浮栏 `applyHideAnimation` 收起，底部原位以弹簧过渡（`curves.interpolatingSpring(0, 1, 200, 17)` 进、`170, 17` 出）弹出同形态的白色胶囊搜索框加「取消」，取消后 `applyShowAnimation` 恢复；不用 HdsTabs 迷你栏（它天生是挂在页签栏旁边的独立小圆，做不成一体）
 - 多选编辑页底部操作栏同样用 `HdsTabs` 悬浮胶囊（删除、导出、全选），不用 `toolbarConfiguration` 与 `ToolBar`；页签构建器里的置灰状态直接读 `this.selectedCount()`，@Builder 按值传入的参数没有响应性
 - 首页列表项用原生 `ListItem` 加 `swipeAction`（自绘 HDS 样式圆形按钮），不用 `HdsListItem`，否则 `ForEach.onMove` 长按拖拽排序失效
 - 首页 `UIContext.setKeyboardAvoidMode(RESIZE)`，键盘弹出时页面压缩而非上移，悬浮栏随之贴在键盘上方
 - 二级页返回首页的刷新统一走 `NavPathStack.setInterception.didShow`，不要依赖 `pushPathByName` 的 `onPop`（`pop(true)` 会匹配 `pop(animated)` 重载，不触发回调）
 - 弹窗一律用系统能力：`AlertDialog`、`bindMenu`、`bindSheet`、`Select`、`showToast`，不自绘弹窗
 - 沉浸光感：`module.json5` 已开应用级开关；弹出层再显式传 `systemMaterial`（菜单与 Toast 用 `ImmersiveStyle.THICK`，弹窗与半模态用 `ULTRA_THICK`）；所有 HDS 标题栏统一 `scrollEffectOpts` 为 `GRADIENT_BLUR` 加 `systemMaterialEffect` ADAPTIVE；`Select` 不要设 `backgroundColor`，否则默认材质失效
+
+## 云同步
+- 通道为 ArkData relationalStore 端云同步（华为云空间）：AGC 容器 `rotor` 对应 `rotor.db`，数据类型 `otp_account` 对应同名表，字段与本地列一一对应，`id` 为端侧去重主键，`secret`、`name`、`note` 为 Encrypted String
+- `otp_account` 是端云同步表：列不带 `NOT NULL`，只能新增不能修改删除；表结构变更写在 `OtpAccountStore` 基于 `RdbStore.version` 的迁移里，库安全等级 S3（S4 不能端云同步）
+- 密钥存 `otp_account.secret` 列，账号的增删改只写这一张表
+- 开关、手动同步、云端变更订阅、网络监听与状态计算都在 `CloudSyncService`；页面只订阅 `onStatusChange` 与 `onCloudDataChange`，开关状态与最近同步时间存 preferences `rotor_settings`
+- 状态三态：已同步、同步中、与云断开；最近一次同步结束码不是 `SUCCESS` 或默认网络断开都算与云断开，具体原因在云同步页显示
+- `setDistributedTables` 的 `DISTRIBUTED_DATASYNC` 权限 lint 提示可忽略，端云类型运行时不需要该权限
+- 调试包（`product=device`）连 AGC 开发环境，发布包连生产环境；同步需两台登录同一华为账号的真机验证，模拟器没有云空间，同步结束码固定为 `CLOUD_DISABLED`，跳转云空间的深链打不开
 
 ## 调试流程
 - 命令行编译前先设置环境。hvigor 取 PATH 里的 `java`，必须指向 DevEco 自带的 JBR：
@@ -38,7 +47,6 @@
 ## ArkTS 注意
 - 系统 API（router / promptAction / getContext）已弃用，统一通过 `this.getUIContext().getRouter() / .getPromptAction() / .getHostContext()` 调用
 - HMAC：`cryptoFramework.createMac(algo)`（'SHA1' 不带 HMAC 前缀），`cryptoFramework.createSymKeyGenerator('HMAC')`
-- Asset Kit：`Map<asset.Tag, asset.Value>` 用 `asset.AssetMap = new Map()`，value 直接传 `Uint8Array`，不要 `.buffer as object`
 - 全屏窗口：EntryAbility.onWindowStageCreate 中 `setWindowLayoutFullScreen(true)`，页面根 `HdsNavigation` / `HdsNavDestination` 加 `.ignoreLayoutSafeArea([LayoutSafeAreaType.SYSTEM], [LayoutSafeAreaEdge.TOP, LayoutSafeAreaEdge.BOTTOM])`，标题栏配置 `enableComponentSafeArea: true` 让内容避让
 - ArkTS 严格模式："Function may throw exceptions" warning 必须用 try/catch 清掉；rethrow 不能直接 `throw e`，要 `throw new Error(String(e))`
 - 自定义组件的属性名不能与通用属性同名（如 `size`、`width`），否则报 not assignable
@@ -49,5 +57,8 @@
 - `pages/EditPage.ets`：添加与编辑（含高级选项）
 - `pages/ManagePage.ets`：多选编辑（批量删除、加密导出）
 - `pages/AboutPage.ets`：关于
+- `pages/SyncPage.ets`：云同步（状态、开关、立即同步、跳转系统云空间）
+- `services/OtpAccountStore.ets`：账号表、结构版本迁移
+- `services/CloudSyncService.ets`：端云同步、网络监听、同步状态
 - `services/ScanService.ets`：扫码与 Google Authenticator 迁移导入
 - `components/OtpCard.ets`、`IssuerAvatar.ets`、`ProgressRing.ets`、`PasswordSheet.ets`
