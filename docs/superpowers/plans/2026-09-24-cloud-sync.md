@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 账号与密钥经华为云空间在同一华为账号的设备间同步，首页右上角显示同步状态。
+**Goal:** 账号与密钥经华为云空间在同一华为账号的设备间同步。
 
-**Architecture:** 密钥从 Asset Kit 迁入 `rotor.db` 的 `OtpAccount.secret` 列，旧表 `otp_account` 的数据搬进端云同步结构的新表；`CloudSyncService` 单例封装 `setDistributedTables`、`cloudSync`、云端变更订阅与网络监听；首页标题栏菜单图标与新的「云同步」二级页订阅其状态。
+**Architecture:** 密钥从 Asset Kit 迁入 `rotor.db` 的 `OtpAccount.secret` 列，旧表 `otp_account` 的数据搬进端云同步结构的新表；`CloudSyncService` 单例封装 `setDistributedTables`、`cloudSync`、云端变更订阅与网络监听；新的「云同步」二级页订阅其状态。
 
 **Tech Stack:** ArkTS、ArkUI、UI Design Kit（HdsNavigation / HdsNavDestination）、ArkData relationalStore 与 preferences、Network Kit、Asset Store Kit（仅迁移读取）。
 
@@ -77,12 +77,12 @@ release(): void;
 - [ ] **Step 1:** `app.json5` 加 `cloudStructuredDataSyncEnabled: true`，`module.json5` 声明 `ohos.permission.GET_NETWORK_INFO`
 - [ ] **Step 2:** 写 `CloudSyncService`：preferences `rotor_settings` 存开关、最近同步时间与引导标记；`enable` / `disable` / `init` 调 `setDistributedTables`（关闭用 `autoSync: false, enableCloud: false`，冷启动按开关状态重新下发一次配置）；`syncNow` 用 `SYNC_MODE_TIME_FIRST`，以进度回调的 `SYNC_FINISH` 为结束、60 秒超时兜底、自动触发 30 秒防抖；成功后通知数据变更；云端变更订阅 `SUBSCRIBE_TYPE_CLOUD`；默认网络监听 `netAvailable` / `netLost`
 - [ ] **Step 3:** 写 `SyncPage`：状态卡（图标、状态文案、最近同步时间、立即同步）、开关卡（Toggle 加首次开启引导弹窗与关闭确认弹窗，失败回位并 toast）、云空间设置入口、说明文字
-- [ ] **Step 4:** 首页：「更多」菜单加「云同步」，路由 `sync`；标题栏 `menu` 放状态图标，未开启时为空；`aboutToAppear` 调 `init` 并订阅状态与云端变更，`aboutToDisappear` 取消
+- [ ] **Step 4:** 首页：「更多」菜单加「云同步」，路由 `sync`；`aboutToAppear` 调 `init` 并订阅云端变更，`aboutToDisappear` 取消
 - [ ] **Step 5:** `EntryAbility.onForeground` 调 `syncNow(ctx, false)`，`onDestroy` 调 `release()`
-- [ ] **Step 6:** 规格 6.5 的全部字符串进中英文资源
+- [ ] **Step 6:** 规格 6.4 的全部字符串进中英文资源
 - [ ] **Step 7:** 编译
-- [ ] **Step 8:** 模拟器验证：「更多」菜单与云同步页布局；开启后 `setDistributedTables` 无报错、状态与右上角图标随同步结果切换（未配置 AGC 时预期为「与云断开」）、首次引导弹窗出现一次；关闭确认后图标消失；冷启动后开关状态保持；深浅色各截一张图
-- [ ] **Step 9:** 提交 `feat(sync): 接入华为云空间端云同步与首页同步状态标识`
+- [ ] **Step 8:** 模拟器验证：「更多」菜单与云同步页布局；开启后 `setDistributedTables` 无报错、状态随同步结果切换（未配置 AGC 时预期为「未开启同步」）、首次引导弹窗出现一次；关闭确认后状态回到「未开启」；冷启动后开关状态保持；深浅色各截一张图
+- [ ] **Step 9:** 提交 `feat(sync): 接入华为云空间端云同步`
 
 ### Task 3: 文案、文档与宣传图
 
@@ -91,7 +91,7 @@ release(): void;
 - Modify: `AGENTS.md`、`README.md`
 - Modify: `assets/05_privacy.svg`、`assets/05_privacy.png`
 
-- [ ] **Step 1:** 关于页中英文案按规格 6.4
+- [ ] **Step 1:** 关于页中英文案按规格 6.3
 - [ ] **Step 2:** `AGENTS.md` 按规格 9.1，`README.md` 按规格 9.2
 - [ ] **Step 3:** `05_privacy.svg` 按规格 9.3 改文案与图标，`rsvg-convert -w 1080 -h 1920` 重渲染 PNG 并目视检查
 - [ ] **Step 4:** 编译，模拟器看一眼关于页

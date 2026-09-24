@@ -2,7 +2,7 @@
 
 日期：2026-09-24
 状态：设计已逐节确认，待实施
-范围：账号与密钥经华为云空间在同一华为账号的设备间同步；密钥存储从 Asset Kit 迁入数据库；首页右上角同步状态标识；新增「云同步」二级页；相关文档与上架素材同步更新
+范围：账号与密钥经华为云空间在同一华为账号的设备间同步；密钥存储从 Asset Kit 迁入数据库；新增「云同步」二级页；相关文档与上架素材同步更新
 
 ## 1. 背景与目标
 
@@ -35,10 +35,9 @@ Rotor 当前是纯本地的 TOTP / HOTP 验证器：账号资料存 `rotor.db`�
 | D8 | 设置入口 | 「更多」菜单加「云同步」项，进入新的二级页 |
 | D9 | 重复账号 | 不自动处理，两条都显示，用户手动删 |
 | D10 | 网络策略 | 不调 `setCloudStrategy`，用系统默认（WLAN 与蜂窝） |
-| D11 | 首页状态标识 | 标题栏右上角一个图标，三个状态：与云断开、同步中、已同步；未开启时隐藏 |
-| D12 | 网络监听 | 接 Network Kit 默认网络监听，声明 `ohos.permission.GET_NETWORK_INFO` |
-| D13 | 关于页文案 | 陈述本机存储与开启云同步后两种状态 |
-| D14 | 宣传图第 5 张 | 本次一并改，文案按「多设备同步作为卖点」方向 |
+| D11 | 网络监听 | 接 Network Kit 默认网络监听，声明 `ohos.permission.GET_NETWORK_INFO` |
+| D12 | 关于页文案 | 陈述本机存储与开启云同步后两种状态 |
+| D13 | 宣传图第 5 张 | 本次一并改，文案按「多设备同步作为卖点」方向 |
 
 ## 4. 数据层
 
@@ -240,34 +239,28 @@ class CloudSyncService {
 
 ## 6. 界面
 
-### 6.1 首页右上角状态标识
-
-- 载体：`HdsNavigation.titleBar.content.menu.value`，一个图标项，`icon` 用 `SymbolGlyphModifier`，`action` 跳转「云同步」页。开关为关时 `menu` 不设，标题栏保持只有大标题。
-- 图标随 `CloudSyncState` 切换，全部取系统符号库：`SYNCED` 用 `sys.symbol.checkmark_icloud_fill`，`SYNCING` 用 `sys.symbol.icloud_badge_arrow_2_circlepath`，`DISCONNECTED` 用 `sys.symbol.icloud_slash`。HDS 标题栏菜单图标不支持符号动效，「同步中」为静态图标。
-- 首页 `aboutToAppear` 订阅 `onStatusChange` 更新图标，`aboutToDisappear` 取消。
-
-### 6.2 「更多」菜单
+### 6.1 「更多」菜单
 
 新增一项「云同步」，图标 `sys.symbol.icloud`，顺序：导入备份、编辑、云同步、关于。路由名 `sync`，加入 `PageMap`。
 
-### 6.3 `pages/SyncPage.ets`
+### 6.2 `pages/SyncPage.ets`
 
 `HdsNavDestination`，标题「云同步」，标题栏样式与编辑页一致（`GRADIENT_BLUR` 加 `systemMaterialEffect` ADAPTIVE，`enableComponentSafeArea`）。内容为 `Scroll` 内三张卡，卡片样式沿用编辑页（`comp_background_list_card`、`corner_radius_level8`、行高 56）：
 
-1. 状态卡：左侧状态图标（与 6.1 同一套，`OFF` 时用 `sys.symbol.icloud`），右侧第一行状态文案（5.7），第二行「最近同步 <时间>」，`lastSyncAt` 为 0 时不显示第二行，时间按系统区域格式化为月日时分。卡片底部「立即同步」按钮，`OFF` 时不显示，`SYNCING` 时禁用。
+1. 状态卡：左侧状态图标取系统符号库，已同步 `sys.symbol.checkmark_icloud_fill`，同步中 `sys.symbol.icloud_badge_arrow_2_circlepath`，与云断开 `sys.symbol.icloud_slash`，未开启 `sys.symbol.icloud`；右侧第一行状态文案（5.7），第二行「最近同步 <时间>」，`lastSyncAt` 为 0 时不显示第二行，时间按系统区域格式化为月日时分。卡片底部「立即同步」按钮，`OFF` 时不显示，`SYNCING` 时禁用。
 2. 开关卡：一行「云同步」加系统 `Toggle({ type: ToggleType.Switch })`。打开时调 `enable`，失败则 Toggle 回到关闭并 toast「开启失败」；本安装首次打开成功后弹 `AlertDialog`（`ULTRA_THICK` 材质）：文案「还需在系统云空间中打开 Rotor 的同步开关」，按钮「去开启」执行 `openLink('hicloud://cloudDrive/getInfo?path=MainActivity')`、「稍后」关闭；是否首次用 preferences 键 `syncGuideShown` 记录。关闭时先弹确认：文案「关闭后本机数据保留，云端已同步的数据仍保存在云空间，可在系统云空间中删除」，按钮「取消」与「关闭」（警示色），确认才调 `disable`，失败则 Toggle 保持打开并 toast「关闭失败」；取消则 Toggle 回到打开。
 3. 入口卡：一行「云空间设置」带右侧 `sys.symbol.chevron_right`，点击 `openLink` 同上。
 
 卡片下方说明文字（`Body_M`、`font_secondary`）：「开启后，账号与密钥存入你的华为云空间，在登录同一华为账号的设备间同步。同步开关需在系统「设置 - 云空间」中打开。」
 
-### 6.4 关于页文案
+### 6.3 关于页文案
 
 `about_description` 改为：
 
 - 中文：「Rotor 是一款本地优先的双因素验证码 App，遵循 RFC 6238。密钥保存在本机应用数据库中；开启云同步后，密钥存入你的华为云空间，在登录同一华为账号的设备间同步。」
 - 英文：「Rotor is a local-first 2FA app following RFC 6238. Secrets are stored in the app's local database on this device. With cloud sync on, they are stored in your Huawei Cloud and synced across devices signed in with the same HUAWEI ID.」
 
-### 6.5 新增字符串资源
+### 6.4 新增字符串资源
 
 | 键 | 中文 | 英文 |
 | --- | --- | --- |
@@ -309,7 +302,7 @@ class CloudSyncService {
 | `services/CloudSyncService.ets` | 新增，第 5 节全部 |
 | `services/ScanService.ets` | 写 `acct.secret`，去掉 Asset 调用 |
 | `services/BackupImporter.ets` | 同上 |
-| `pages/Index.ets` | 删 `secrets` 缓存；卡片用 `a.secret`；「更多」菜单加「云同步」；标题栏状态图标；`aboutToAppear` 调 `CloudSyncService.init` 并订阅状态与云端变更；路由 `sync` |
+| `pages/Index.ets` | 删 `secrets` 缓存；卡片用 `a.secret`；「更多」菜单加「云同步」；`aboutToAppear` 调 `CloudSyncService.init` 并订阅云端变更；路由 `sync` |
 | `pages/EditPage.ets` | 保存写 `account.secret` |
 | `pages/ManagePage.ets` | 导出读 `a.secret`；删除去掉 Asset 调用 |
 | `pages/SyncPage.ets` | 新增 |
@@ -317,14 +310,14 @@ class CloudSyncService {
 | `entryability/EntryAbility.ets` | `onForeground` 调 `syncNow`，`onDestroy` 调 `release` |
 | `AppScope/app.json5` | `cloudStructuredDataSyncEnabled: true` |
 | `entry/src/main/module.json5` | 声明 `ohos.permission.GET_NETWORK_INFO` |
-| `resources/base/element/string.json`、`resources/en_US/element/string.json` | 6.4、6.5 文案 |
+| `resources/base/element/string.json`、`resources/en_US/element/string.json` | 6.3、6.4 文案 |
 | `AGENTS.md` | 见 9.1 |
 | `README.md` | 见 9.2 |
 | `assets/05_privacy.svg` 及渲染产物 | 见 9.3 |
 
 ## 8. 边界与异常
 
-- 未登录华为账号、海外账号、系统开关未开：`setDistributedTables` 成功，手动同步结束码为 `CLOUD_DISABLED`，右上角「与云断开」，云同步页显示「未开启同步」与「云空间设置」入口。
+- 未登录华为账号、海外账号、系统开关未开：`setDistributedTables` 成功，手动同步结束码为 `CLOUD_DISABLED`，云同步页显示「未开启同步」与「云空间设置」入口。
 - 云端删除：本地行自动清理，首页刷新即消失。
 - 两台设备各自添加同一账号：两条都保留，用户手动删。
 - HOTP 计数器随行同步；两台设备短时间内先后刷新，较早的加一会被较晚的值覆盖。
@@ -340,7 +333,6 @@ class CloudSyncService {
 
 ### 9.1 `AGENTS.md`
 
-- 「页面结构」一条改为：首页标题栏放大标题，右上角仅一个云同步状态图标（未开启时隐藏），其余操作全部收在 HdsTabs 悬浮栏。
 - 「关键文件」加 `pages/SyncPage.ets`（云同步开关、状态、立即同步、跳转云空间）与 `services/CloudSyncService.ets`（端云同步、网络监听、状态）。
 - 「ArkTS 注意」删去 Asset Kit 一条。
 - 「调试流程」加一条：云同步调试用 `product=device` 连 AGC 开发环境，需两台登录同一华为账号的真机。
@@ -377,7 +369,7 @@ class CloudSyncService {
 - 不写单元测试。hvigor 编译、hdc 装真机、截图核对。
 - 升级验证：先装当前 master 构建并添加几个账号（含一个 HOTP），覆盖安装新版，确认账号与密钥完整、验证码正确、Asset Kit 已清空、`version` 为 3、库里只剩 `OtpAccount` 表、加密列没有空串。
 - 同步验证需要两台登录同一华为账号的真机。只有一台时用 AGC「数据记录调测」页看云端行是否出现，加密字段看不到内容，只能看 `id`、`type` 等明文列。
-- 场景：A 开启后云端出现全部行；B 开启后拉到全部账号并能出码；A 改名、B 更新；A 删除、B 消失；A 断网右上角切「与云断开」、恢复后回「已同步」；A 关闭后再改名，B 不变；HOTP 在 A 刷新，B 的计数器跟上。
+- 场景：A 开启后云端出现全部行；B 开启后拉到全部账号并能出码；A 改名、B 更新；A 删除、B 消失；A 断网后云同步页显示「网络错误，同步已暂停」、恢复后自动同步回到「已与云空间同步」；A 关闭后再改名，B 不变；HOTP 在 A 刷新，B 的计数器跟上。
 
 ## 12. 实施顺序
 
@@ -385,7 +377,7 @@ class CloudSyncService {
 
 1. 数据层：模型加 `secret`、表重建与迁移、Asset Kit 移除、各页面改用 `secret` 列。验证升级路径。
 2. 云同步服务：`app.json5` 声明、AGC 开发环境配置、`CloudSyncService`（开启、关闭、手动同步、云端变更刷新）、云同步页最简版（开关、状态文字、立即同步）。验证双机同步。
-3. 界面完整版：云同步页三张卡与对话框、右上角状态图标、网络监听与权限、全部文案资源。
+3. 界面完整版：云同步页三张卡与对话框、网络监听与权限、全部文案资源。
 4. 文案与素材：关于页、`AGENTS.md`、`README.md`、宣传图第 5 张。
 5. AGC 实施变更到生产环境，发布包验证。
 

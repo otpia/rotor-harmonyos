@@ -6,7 +6,6 @@ import { curves, KeyboardAvoidMode, SymbolGlyphModifier, uiMaterial } from '@kit
 import {
   HdsAnimationMode,
   HdsNavigation,
-  HdsNavigationMenuContentOptions,
   HdsNavigationTitleMode,
   HdsTabs,
   HdsTabsController,
@@ -17,7 +16,7 @@ import { OtpAccount, OtpType } from '../model/OtpAccount';
 import { OtpAccountStore } from '../services/OtpAccountStore';
 import { totp, hotp, remainingSeconds } from '../services/OtpEngine';
 import { TickerService } from '../services/TickerService';
-import { CloudSyncService, CloudSyncState, CloudSyncStatus, syncStateSymbol } from '../services/CloudSyncService';
+import { CloudSyncService } from '../services/CloudSyncService';
 import { importBackup } from '../services/BackupImporter';
 import { scanQrCode, ScanResult, ScanResultKind } from '../services/ScanService';
 import { getString } from '../utils/I18n';
@@ -75,7 +74,6 @@ function liftHaptic(): void {
 struct Index {
   @Provide('pathStack') pathStack: NavPathStack = new NavPathStack();
   @State accounts: OtpAccount[] = [];
-  @State syncStatus: CloudSyncStatus = CloudSyncService.status();
   @State codes: Record<string, CodeState> = {};
   @State query: string = '';
   @State importSheetOpen: boolean = false;
@@ -86,15 +84,11 @@ struct Index {
   private tabsController: HdsTabsController = new HdsTabsController();
   private pendingImportUri: string = '';
   private unsubTick: (() => void) | null = null;
-  private unsubSyncStatus: (() => void) | null = null;
   private unsubCloudData: (() => void) | null = null;
 
   aboutToAppear(): void {
     this.refresh();
     this.unsubTick = TickerService.subscribe((now: number) => this.tick(now));
-    this.unsubSyncStatus = CloudSyncService.onStatusChange((s: CloudSyncStatus) => {
-      this.syncStatus = s;
-    });
     this.unsubCloudData = CloudSyncService.onCloudDataChange(() => {
       this.refresh();
     });
@@ -122,9 +116,6 @@ struct Index {
   aboutToDisappear(): void {
     if (this.unsubTick) {
       this.unsubTick();
-    }
-    if (this.unsubSyncStatus) {
-      this.unsubSyncStatus();
     }
     if (this.unsubCloudData) {
       this.unsubCloudData();
@@ -397,26 +388,6 @@ struct Index {
     } catch (e) {
       console.error('[Index.goSync]', e);
     }
-  }
-
-  // 标题栏右上角的云同步状态图标，未开启云同步时不显示
-  private syncMenu(): HdsNavigationMenuContentOptions {
-    if (this.syncStatus.state === CloudSyncState.OFF) {
-      const empty: HdsNavigationMenuContentOptions = { value: [] };
-      return empty;
-    }
-    const menu: HdsNavigationMenuContentOptions = {
-      value: [{
-        content: {
-          icon: syncStateSymbol(this.syncStatus.state),
-          label: $r('app.string.menu_sync'),
-          action: () => {
-            this.goSync();
-          }
-        }
-      }]
-    };
-    return menu;
   }
 
   // ---------- 导入备份 ----------
@@ -806,8 +777,7 @@ struct Index {
     .hideBackButton(true)
     .titleBar({
       content: {
-        title: { mainTitle: $r('app.string.EntryAbility_label') },
-        menu: this.syncMenu()
+        title: { mainTitle: $r('app.string.EntryAbility_label') }
       },
       style: {
         scrollEffectOpts: {
