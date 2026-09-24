@@ -6,6 +6,7 @@ import { curves, KeyboardAvoidMode, SymbolGlyphModifier, uiMaterial } from '@kit
 import {
   HdsAnimationMode,
   HdsNavigation,
+  HdsNavigationMenuContentOptions,
   HdsNavigationTitleMode,
   HdsTabs,
   HdsTabsController,
@@ -16,6 +17,7 @@ import { OtpAccount, OtpType } from '../model/OtpAccount';
 import { OtpAccountStore } from '../services/OtpAccountStore';
 import { totp, hotp, remainingSeconds } from '../services/OtpEngine';
 import { TickerService } from '../services/TickerService';
+import { CloudSyncService, CloudSyncState, CloudSyncStatus, syncStateSymbol } from '../services/CloudSyncService';
 import { importBackup } from '../services/BackupImporter';
 import { scanQrCode, ScanResult, ScanResultKind } from '../services/ScanService';
 import { getString } from '../utils/I18n';
@@ -24,6 +26,7 @@ import { PasswordSheet } from '../components/PasswordSheet';
 import { EditPage, EditParams } from './EditPage';
 import { ManagePage } from './ManagePage';
 import { AboutPage } from './AboutPage';
+import { SyncPage } from './SyncPage';
 
 interface CodeState {
   code: string;
@@ -33,6 +36,7 @@ interface CodeState {
 const ROUTE_EDIT = 'edit';
 const ROUTE_MANAGE = 'manage';
 const ROUTE_ABOUT = 'about';
+const ROUTE_SYNC = 'sync';
 const SEARCH_ID = 'rotor_search_input';
 // 底部悬浮栏高度加留白，列表末尾预留，避免最后一项被遮挡
 const LIST_END_OFFSET = 108;
@@ -71,6 +75,7 @@ function liftHaptic(): void {
 struct Index {
   @Provide('pathStack') pathStack: NavPathStack = new NavPathStack();
   @State accounts: OtpAccount[] = [];
+  @State syncStatus: CloudSyncStatus = CloudSyncService.status();
   @State codes: Record<string, CodeState> = {};
   @State query: string = '';
   @State importSheetOpen: boolean = false;
@@ -81,10 +86,19 @@ struct Index {
   private tabsController: HdsTabsController = new HdsTabsController();
   private pendingImportUri: string = '';
   private unsubTick: (() => void) | null = null;
+  private unsubSyncStatus: (() => void) | null = null;
+  private unsubCloudData: (() => void) | null = null;
 
   aboutToAppear(): void {
     this.refresh();
     this.unsubTick = TickerService.subscribe((now: number) => this.tick(now));
+    this.unsubSyncStatus = CloudSyncService.onStatusChange((s: CloudSyncStatus) => {
+      this.syncStatus = s;
+    });
+    this.unsubCloudData = CloudSyncService.onCloudDataChange(() => {
+      this.refresh();
+    });
+    CloudSyncService.init(this.ctx());
     // 软键盘弹出时压缩页面而不是整体上移，保证标题栏与悬浮栏都留在可视区
     try {
       this.getUIContext().setKeyboardAvoidMode(KeyboardAvoidMode.RESIZE);
@@ -108,6 +122,12 @@ struct Index {
   aboutToDisappear(): void {
     if (this.unsubTick) {
       this.unsubTick();
+    }
+    if (this.unsubSyncStatus) {
+      this.unsubSyncStatus();
+    }
+    if (this.unsubCloudData) {
+      this.unsubCloudData();
     }
   }
 
@@ -371,6 +391,34 @@ struct Index {
     }
   }
 
+  private goSync(): void {
+    try {
+      this.pathStack.pushPathByName(ROUTE_SYNC, ROUTE_SYNC);
+    } catch (e) {
+      console.error('[Index.goSync]', e);
+    }
+  }
+
+  // 标题栏右上角的云同步状态图标，未开启云同步时不显示
+  private syncMenu(): HdsNavigationMenuContentOptions {
+    if (this.syncStatus.state === CloudSyncState.OFF) {
+      const empty: HdsNavigationMenuContentOptions = { value: [] };
+      return empty;
+    }
+    const menu: HdsNavigationMenuContentOptions = {
+      value: [{
+        content: {
+          icon: syncStateSymbol(this.syncStatus.state),
+          label: $r('app.string.menu_sync'),
+          action: () => {
+            this.goSync();
+          }
+        }
+      }]
+    };
+    return menu;
+  }
+
   // ---------- 导入备份 ----------
 
   private async handleImport(): Promise<void> {
@@ -470,6 +518,13 @@ struct Index {
       })
         .onClick(() => {
           this.goManage();
+        })
+      MenuItem({
+        symbolStartIcon: new SymbolGlyphModifier($r('sys.symbol.icloud')),
+        content: $r('app.string.menu_sync')
+      })
+        .onClick(() => {
+          this.goSync();
         })
       MenuItem({
         symbolStartIcon: new SymbolGlyphModifier($r('sys.symbol.info_circle')),
@@ -698,6 +753,8 @@ struct Index {
       ManagePage()
     } else if (name === ROUTE_ABOUT) {
       AboutPage()
+    } else if (name === ROUTE_SYNC) {
+      SyncPage()
     }
   }
 
@@ -749,7 +806,8 @@ struct Index {
     .hideBackButton(true)
     .titleBar({
       content: {
-        title: { mainTitle: $r('app.string.EntryAbility_label') }
+        title: { mainTitle: $r('app.string.EntryAbility_label') },
+        menu: this.syncMenu()
       },
       style: {
         scrollEffectOpts: {

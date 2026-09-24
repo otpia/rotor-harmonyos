@@ -1,6 +1,7 @@
 import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
+import { CloudSyncService } from '../services/CloudSyncService';
 
 const DOMAIN = 0x0000;
 
@@ -15,6 +16,7 @@ export default class EntryAbility extends UIAbility {
   }
 
   onDestroy(): void {
+    CloudSyncService.release();
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onDestroy');
   }
 
@@ -64,6 +66,7 @@ export default class EntryAbility extends UIAbility {
 
   onForeground(): void {
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onForeground');
+    CloudSyncService.syncNow(this.context, false);
   }
 
   onBackground(): void {
