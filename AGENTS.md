@@ -23,6 +23,7 @@
 - 开关、手动同步、云端变更订阅、网络监听与状态计算都在 `CloudSyncService`；页面只订阅 `onStatusChange` 与 `onCloudDataChange`，开关状态与最近同步时间存 preferences `rotor_settings`
 - 状态三态：已同步、同步中、与云断开；最近一次同步结束码不是 `SUCCESS` 或默认网络断开都算与云断开，具体原因在云同步页显示
 - `setDistributedTables` 的 `DISTRIBUTED_DATASYNC` 权限 lint 提示可忽略，端云类型运行时不需要该权限
+- 调试签名必须在 DevEco「Project Structure > Signing Configs」勾选「Associate with registered application」生成，profile 的 `app-identifier` 要与 AGC 注册应用一致（与发布 profile 相同），否则系统日志报 `load schema fail`，同步结束码为 3；换签名后应用标识变化，只能卸载重装
 - 调试包（`product=device`）连 AGC 开发环境，发布包连生产环境；同步需两台登录同一华为账号的真机验证，模拟器没有云空间，同步结束码固定为 `CLOUD_DISABLED`，跳转云空间的深链打不开
 
 ## 调试流程
