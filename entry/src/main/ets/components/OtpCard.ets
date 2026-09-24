@@ -19,66 +19,72 @@ export struct OtpCard {
   }
 
   @Styles cardNormal() {
-    .backgroundColor($r('sys.color.comp_background_list_card'))
+    .backgroundColor(Color.Transparent)
   }
 
   @Styles cardPressed() {
-    .backgroundColor($r('sys.color.comp_background_tertiary'))
+    .backgroundColor($r('sys.color.interactive_pressed'))
   }
 
+  // 外层铺不透明卡片底色，内层叠加半透明按压色，拖拽浮起压住相邻卡片时不透底
   build() {
     Column() {
-      Row() {
-        IssuerAvatar({ name: this.account.name, diameter: 24 })
-        Text(this.account.name)
-          .fontSize($r('sys.float.Body_L'))
-          .fontWeight(FontWeight.Medium)
-          .fontColor($r('sys.color.font_primary'))
-          .maxLines(1)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
-          .margin({ left: 8 })
-          .layoutWeight(1)
-      }
-      .alignItems(VerticalAlign.Center)
-      .width('100%')
+      Column() {
+        Row() {
+          IssuerAvatar({ name: this.account.name, diameter: 24 })
+          Text(this.account.name)
+            .fontSize($r('sys.float.Body_L'))
+            .fontWeight(FontWeight.Medium)
+            .fontColor($r('sys.color.font_primary'))
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .margin({ left: 8 })
+            .layoutWeight(1)
+        }
+        .alignItems(VerticalAlign.Center)
+        .width('100%')
 
-      Row() {
-        Text(formatGroups(this.code))
-          .fontSize(40)
-          .fontWeight(FontWeight.Bold)
-          .fontFamily('HarmonyOS Sans Condensed')
-          .fontColor(this.codeColor())
-          .layoutWeight(1)
-        if (this.account.type === OtpType.HOTP) {
-          Button($r('app.string.btn_refresh'))
-            .buttonStyle(ButtonStyleMode.NORMAL)
-            .controlSize(ControlSize.SMALL)
-            .onClick(() => {
-              if (this.onRefresh) {
-                this.onRefresh();
-              }
-            })
-        } else {
-          ProgressRing({ period: this.account.period })
+        Row() {
+          Text(formatGroups(this.code))
+            .fontSize(40)
+            .fontWeight(FontWeight.Bold)
+            .fontFamily('HarmonyOS Sans Condensed')
+            .fontColor(this.codeColor())
+            .layoutWeight(1)
+          if (this.account.type === OtpType.HOTP) {
+            Button($r('app.string.btn_refresh'))
+              .buttonStyle(ButtonStyleMode.NORMAL)
+              .controlSize(ControlSize.SMALL)
+              .onClick(() => {
+                if (this.onRefresh) {
+                  this.onRefresh();
+                }
+              })
+          } else {
+            ProgressRing({ period: this.account.period })
+          }
+        }
+        .alignItems(VerticalAlign.Center)
+        .margin({ top: 8 })
+        .width('100%')
+
+        if (this.account.note.length > 0) {
+          Text(this.account.note)
+            .fontSize($r('sys.float.Body_M'))
+            .fontColor($r('sys.color.font_secondary'))
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .margin({ top: 8 })
+            .width('100%')
         }
       }
-      .alignItems(VerticalAlign.Center)
-      .margin({ top: 8 })
+      .padding(16)
+      .borderRadius($r('sys.float.corner_radius_level8'))
       .width('100%')
-
-      if (this.account.note.length > 0) {
-        Text(this.account.note)
-          .fontSize($r('sys.float.Body_M'))
-          .fontColor($r('sys.color.font_secondary'))
-          .maxLines(1)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
-          .margin({ top: 8 })
-          .width('100%')
-      }
+      .stateStyles({ normal: this.cardNormal, pressed: this.cardPressed })
     }
-    .padding(16)
     .borderRadius($r('sys.float.corner_radius_level8'))
     .width('100%')
-    .stateStyles({ normal: this.cardNormal, pressed: this.cardPressed })
+    .backgroundColor($r('sys.color.comp_background_list_card'))
   }
 }
