@@ -1,6 +1,7 @@
-import { pasteboard } from '@kit.BasicServicesKit';
+import { BusinessError, pasteboard } from '@kit.BasicServicesKit';
 import { common } from '@kit.AbilityKit';
 import { picker } from '@kit.CoreFileKit';
+import { vibrator } from '@kit.SensorServiceKit';
 import { curves, KeyboardAvoidMode, SymbolGlyphModifier, uiMaterial } from '@kit.ArkUI';
 import {
   HdsAnimationMode,
@@ -49,6 +50,21 @@ function menuMaterial(): uiMaterial.ImmersiveMaterial {
 
 function dialogMaterial(): uiMaterial.ImmersiveMaterial {
   return new uiMaterial.ImmersiveMaterial({ style: uiMaterial.ImmersiveStyle.ULTRA_THICK });
+}
+
+// 长按浮起的触感反馈，与系统组件长按同款效果；设备不支持时退回通用轻振
+const LONG_PRESS_HAPTIC = 'haptic.long_press_light';
+
+function liftHaptic(): void {
+  try {
+    const effectId = vibrator.isSupportEffectSync(LONG_PRESS_HAPTIC) ? LONG_PRESS_HAPTIC : 'haptic.effect.soft';
+    vibrator.startVibration({ type: 'preset', effectId: effectId, count: 1 }, { usage: 'touch' })
+      .catch((e: BusinessError) => {
+        console.error('[liftHaptic]', e.code, e.message);
+      });
+  } catch (e) {
+    console.error('[liftHaptic]', e);
+  }
 }
 
 @Entry
@@ -664,6 +680,10 @@ struct Index {
         }, (a: OtpAccount) => a.id)
           .onMove((from: number, to: number) => {
             this.reorder(from, to);
+          }, {
+            onLongPress: () => {
+              liftHaptic();
+            }
           })
       }
       .width('100%')
