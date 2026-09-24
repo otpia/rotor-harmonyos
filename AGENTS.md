@@ -17,9 +17,9 @@
 - 沉浸光感：`module.json5` 已开应用级开关；弹出层再显式传 `systemMaterial`（菜单与 Toast 用 `ImmersiveStyle.THICK`，弹窗与半模态用 `ULTRA_THICK`）；所有 HDS 标题栏统一 `scrollEffectOpts` 为 `GRADIENT_BLUR` 加 `systemMaterialEffect` ADAPTIVE；`Select` 不要设 `backgroundColor`，否则默认材质失效
 
 ## 云同步
-- 通道为 ArkData relationalStore 端云同步（华为云空间）：AGC 容器 `rotor` 对应 `rotor.db`，数据类型 `otp_account` 对应同名表，字段与本地列一一对应，`id` 为端侧去重主键，`secret`、`name`、`note` 为 Encrypted String
-- `otp_account` 是端云同步表：列不带 `NOT NULL`，只能新增不能修改删除；表结构变更写在 `OtpAccountStore` 基于 `RdbStore.version` 的迁移里，库安全等级 S3（S4 不能端云同步）
-- 密钥存 `otp_account.secret` 列，账号的增删改只写这一张表
+- 通道为 ArkData relationalStore 端云同步（华为云空间）：AGC 容器 `rotor` 对应 `rotor.db`，数据类型 `OtpAccount` 对应同名表（AGC 数据类型名只允许字母和数字、以字母开头），字段名区分大小写、与本地列一一对应，`id` 为端侧去重主键，`secret`、`name`、`note` 为 Encrypted String
+- `OtpAccount` 是端云同步表：列不带 `NOT NULL`，只能新增不能修改删除；表结构变更写在 `OtpAccountStore` 基于 `RdbStore.version` 的迁移里，库安全等级 S3（S4 不能端云同步）
+- 密钥存 `OtpAccount.secret` 列，账号的增删改只写这一张表
 - 开关、手动同步、云端变更订阅、网络监听与状态计算都在 `CloudSyncService`；页面只订阅 `onStatusChange` 与 `onCloudDataChange`，开关状态与最近同步时间存 preferences `rotor_settings`
 - 状态三态：已同步、同步中、与云断开；最近一次同步结束码不是 `SUCCESS` 或默认网络断开都算与云断开，具体原因在云同步页显示
 - `setDistributedTables` 的 `DISTRIBUTED_DATASYNC` 权限 lint 提示可忽略，端云类型运行时不需要该权限

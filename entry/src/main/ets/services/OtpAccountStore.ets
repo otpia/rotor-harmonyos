@@ -5,7 +5,8 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { util } from '@kit.ArkTS';
 import { OtpAccount, OtpType, defaultAccount } from '../model/OtpAccount';
 
-export const ACCOUNT_TABLE = 'otp_account';
+// AGC 云空间的数据类型名必须与表名一致，只允许字母和数字且以字母开头
+export const ACCOUNT_TABLE = 'OtpAccount';
 
 // 端云同步表的列不能带 NOT NULL，且只能新增不能修改删除
 const CREATE_SQL = `CREATE TABLE IF NOT EXISTS ${ACCOUNT_TABLE} (
@@ -24,10 +25,10 @@ const CREATE_SQL = `CREATE TABLE IF NOT EXISTS ${ACCOUNT_TABLE} (
   secret TEXT
 )`;
 
-// 结构版本：0 为带 NOT NULL 约束、密钥在 Asset Kit 的旧表，1 为表已重建，2 为密钥已迁入 secret 列
-const VERSION_REBUILT = 1;
+// 结构版本：2 为账号表已是端云同步结构且密钥全部在 secret 列
 const VERSION_CURRENT = 2;
-const LEGACY_TABLE = 'otp_account_v0';
+// 旧账号表：列带 NOT NULL 约束，密钥在 Asset Kit
+const LEGACY_TABLE = 'otp_account';
 const LEGACY_COLUMNS = 'id, name, note, type, period, digits, algorithm, counter, iconKey, orderIndex, createdAt, updatedAt';
 const LEGACY_ALIAS_PREFIX = 'otp_secret_';
 
@@ -88,14 +89,25 @@ async function tableExists(s: relationalStore.RdbStore, name: string): Promise<b
   }
 }
 
-// 在一个事务内把旧表重建为新结构，失败整体回滚
-async function rebuildTable(s: relationalStore.RdbStore): Promise<void> {
+async function hasColumn(s: relationalStore.RdbStore, table: string, column: string): Promise<boolean> {
+  try {
+    const rs = await s.querySql(`SELECT name FROM pragma_table_info('${table}') WHERE name = ?`, [column]);
+    const found = rs.goToFirstRow();
+    rs.close();
+    return found;
+  } catch (e) {
+    throw new Error(String(e));
+  }
+}
+
+// 在一个事务内建新表、搬入旧表数据并删除旧表，失败整体回滚；旧表已有 secret 列时一并搬入
+async function moveLegacyTable(s: relationalStore.RdbStore): Promise<void> {
+  const columns = (await hasColumn(s, LEGACY_TABLE, 'secret')) ? `${LEGACY_COLUMNS}, secret` : LEGACY_COLUMNS;
   let tx: relationalStore.Transaction | null = null;
   try {
     tx = await s.createTransaction();
-    await tx.execute(`ALTER TABLE ${ACCOUNT_TABLE} RENAME TO ${LEGACY_TABLE}`);
     await tx.execute(CREATE_SQL);
-    await tx.execute(`INSERT INTO ${ACCOUNT_TABLE} (${LEGACY_COLUMNS}) SELECT ${LEGACY_COLUMNS} FROM ${LEGACY_TABLE}`);
+    await tx.execute(`INSERT INTO ${ACCOUNT_TABLE} (${columns}) SELECT ${columns} FROM ${LEGACY_TABLE}`);
     await tx.execute(`DROP TABLE ${LEGACY_TABLE}`);
     await tx.commit();
   } catch (e) {
@@ -103,7 +115,7 @@ async function rebuildTable(s: relationalStore.RdbStore): Promise<void> {
       try {
         await tx.rollback();
       } catch (re) {
-        console.error('[OtpAccountStore.rebuildTable] rollback', JSON.stringify(re));
+        console.error('[OtpAccountStore.moveLegacyTable] rollback', JSON.stringify(re));
       }
     }
     throw new Error(String(e));
@@ -150,21 +162,22 @@ async function migrateSecrets(s: relationalStore.RdbStore): Promise<boolean> {
   return ok;
 }
 
+// 按表的实际状态迁移：没有新表时从旧表搬数据或新建，再把 Asset Kit 中的密钥补进 secret 列，全部完成才记版本
 async function migrate(s: relationalStore.RdbStore): Promise<void> {
   try {
-    let version = s.version;
-    if (version === 0) {
-      if (await tableExists(s, ACCOUNT_TABLE)) {
-        await rebuildTable(s);
-        version = VERSION_REBUILT;
+    const hasTable = await tableExists(s, ACCOUNT_TABLE);
+    if (hasTable && s.version >= VERSION_CURRENT) {
+      return;
+    }
+    if (!hasTable) {
+      if (await tableExists(s, LEGACY_TABLE)) {
+        await moveLegacyTable(s);
+        console.info('[OtpAccountStore.migrate] legacy table moved');
       } else {
         await s.executeSql(CREATE_SQL);
-        version = VERSION_CURRENT;
       }
-      s.version = version;
-      console.info(`[OtpAccountStore.migrate] version -> ${version}`);
     }
-    if (version === VERSION_REBUILT && await migrateSecrets(s)) {
+    if (await migrateSecrets(s)) {
       s.version = VERSION_CURRENT;
       console.info(`[OtpAccountStore.migrate] version -> ${VERSION_CURRENT}`);
     }

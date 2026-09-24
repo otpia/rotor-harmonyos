@@ -4,7 +4,7 @@
 
 **Goal:** 账号与密钥经华为云空间在同一华为账号的设备间同步，首页右上角显示同步状态。
 
-**Architecture:** 密钥从 Asset Kit 迁入 `rotor.db` 的 `otp_account.secret` 列，表重建为端云同步表结构；`CloudSyncService` 单例封装 `setDistributedTables`、`cloudSync`、云端变更订阅与网络监听；首页标题栏菜单图标与新的「云同步」二级页订阅其状态。
+**Architecture:** 密钥从 Asset Kit 迁入 `rotor.db` 的 `OtpAccount.secret` 列，旧表 `otp_account` 的数据搬进端云同步结构的新表；`CloudSyncService` 单例封装 `setDistributedTables`、`cloudSync`、云端变更订阅与网络监听；首页标题栏菜单图标与新的「云同步」二级页订阅其状态。
 
 **Tech Stack:** ArkTS、ArkUI、UI Design Kit（HdsNavigation / HdsNavDestination）、ArkData relationalStore 与 preferences、Network Kit、Asset Store Kit（仅迁移读取）。
 
@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - `compatibleSdkVersion` 与 `targetSdkVersion` 为 26.0.0，不做低版本兼容分支
-- 库名 `rotor.db`、表名 `otp_account`、AGC 容器名 `rotor`，三者对应关系不可改
+- 库名 `rotor.db` 对应 AGC 容器 `rotor`，表名 `OtpAccount` 对应同名 AGC 数据类型（只允许字母和数字、以字母开头），对应关系不可改
 - 端云同步表所有列不带 `NOT NULL`，主键为 UUID 文本
 - 颜色、字号、圆角用 `sys.color.*` / `sys.float.*`，图标用 `sys.symbol.*`，文案进 `string.json` 中英文各一份
 - 弹窗一律系统能力，弹窗与半模态 `ULTRA_THICK` 材质，Toast `THICK`
@@ -33,7 +33,7 @@
 - Modify: `entry/src/main/ets/pages/Index.ets`、`EditPage.ets`、`ManagePage.ets`
 
 **Interfaces:**
-- Produces: `OtpAccount.secret: string`；`export const ACCOUNT_TABLE = 'otp_account'`；`OtpAccountStore.store(ctx: common.Context): Promise<relationalStore.RdbStore>`
+- Produces: `OtpAccount.secret: string`；`export const ACCOUNT_TABLE = 'OtpAccount'`；`OtpAccountStore.store(ctx: common.Context): Promise<relationalStore.RdbStore>`
 
 - [ ] **Step 1:** 模型加 `secret`，`defaultAccount` 置 `''`，`cloneAccount` 复制
 - [ ] **Step 2:** `OtpAccountStore` 改为规格 4.1 的建表语句、`securityLevel: S3`；`rowToAccount` 每列用 `isColumnNull` 兜底；`toBucket` 带 `secret`；暴露 `store(ctx)`

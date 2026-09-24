@@ -44,10 +44,10 @@ Rotor 当前是纯本地的 TOTP / HOTP 验证器：账号资料存 `rotor.db`�
 
 ### 4.1 表结构
 
-`otp_account` 重建为下面的结构。所有列不带 `NOT NULL`（端云同步表不允许），`DEFAULT` 保留；主键 `id` 为 UUID 文本，满足「设备间主键唯一、不能自增」的要求。新增 `secret` 列存 base32 明文密钥，不设默认值，`NULL` 或空串都视为「尚无密钥」。
+账号表为 `OtpAccount`，结构如下。所有列不带 `NOT NULL`（端云同步表不允许），`DEFAULT` 保留；主键 `id` 为 UUID 文本，满足「设备间主键唯一、不能自增」的要求。新增 `secret` 列存 base32 明文密钥，不设默认值，`NULL` 或空串都视为「尚无密钥」。
 
 ```sql
-CREATE TABLE IF NOT EXISTS otp_account (
+CREATE TABLE IF NOT EXISTS OtpAccount (
   id TEXT PRIMARY KEY,
   name TEXT DEFAULT '',
   note TEXT DEFAULT '',
@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS otp_account (
 )
 ```
 
-表名沿用 `otp_account`，库名沿用 `rotor.db`：AGC 容器名必须与库名（去后缀）一致，数据类型名必须与表名一致。表列以后只能新增不能修改删除，本版字段即为定稿。
+库名沿用 `rotor.db`，表名为 `OtpAccount`：AGC 容器名必须与库名（去后缀）一致，数据类型名必须与表名一致，且只允许字母和数字、以字母开头。表列以后只能新增不能修改删除，本版字段即为定稿。
 
 `OtpAccount` 模型新增 `secret: string`，`defaultAccount()` 与 `cloneAccount()` 同步补上；读取行时每一列都按默认值兜底（`isColumnNull` 判断），云端来的行某列为空时不报错。
 
@@ -87,21 +87,21 @@ const CONFIG: relationalStore.StoreConfig = {
 
 | 版本 | 含义 |
 | --- | --- |
-| 0 | 现网库：旧结构，密钥在 Asset Kit；或全新安装尚未建表 |
-| 1 | 表已重建为 4.1 结构，`secret` 列尚未填充 |
-| 2 | 存量密钥已从 Asset Kit 迁入 `secret` 列，Asset Kit 不再使用 |
+| 0 | 现网库：旧表 `otp_account`（列带 `NOT NULL`，密钥在 Asset Kit）；或全新安装尚未建表 |
+| 2 | `OtpAccount` 已按 4.1 建好，存量密钥全部在 `secret` 列 |
 
-步骤：
+步骤（按表的实际状态判断，中途被杀下次启动接着做）：
 
-1. 读 `version`。为 0 时查 `sqlite_master` 判断 `otp_account` 是否存在。
-   - 存在：在一个事务内执行 `ALTER TABLE otp_account RENAME TO otp_account_v0`、按 4.1 建新表、`INSERT INTO otp_account (id, name, note, type, period, digits, algorithm, counter, iconKey, orderIndex, createdAt, updatedAt) SELECT id, name, note, type, period, digits, algorithm, counter, iconKey, orderIndex, createdAt, updatedAt FROM otp_account_v0`（`secret` 留空）、`DROP TABLE otp_account_v0`；提交后置 `version = 1`。事务失败则回滚，版本保持 0，下次启动重试。
-   - 不存在：按 4.1 建表，直接置 `version = 2`。
-2. 版本为 1 时，查 `SELECT id FROM otp_account WHERE secret IS NULL OR secret = ''`，逐行用别名 `otp_secret_<id>` 从 Asset Kit 读密钥：读到则 `UPDATE` 该行 `secret` 并 `asset.remove` 该条；读不到（Asset 里没有）视为该账号无密钥，跳过。循环结束后，只要过程中没有发生读取或写入异常，就置 `version = 2`；有异常则保持 1，下次启动接着跑。这一步幂等，中途被杀不会丢数据。
-3. 仍没有密钥的账号在首页显示 `------`，用户可在编辑页补录密钥或删除。
+1. `OtpAccount` 已存在且 `version` 为 2：已完成，直接返回。
+2. `OtpAccount` 不存在：
+   - 旧表 `otp_account` 存在：在一个事务内按 4.1 建 `OtpAccount`、`INSERT INTO OtpAccount (12 个旧列) SELECT 12 个旧列 FROM otp_account`（旧表已有 `secret` 列时连同 `secret` 一起搬）、`DROP TABLE otp_account`。事务失败整体回滚，下次启动重试。
+   - 旧表也不存在：按 4.1 建表。
+3. 查 `SELECT id FROM OtpAccount WHERE secret IS NULL OR secret = ''`，逐行用别名 `otp_secret_<id>` 从 Asset Kit 读密钥：读到则 `UPDATE` 该行 `secret`，返回 1 行才 `asset.remove` 该条；读不到（Asset 里没有）视为该账号无密钥，跳过。全程没有读取或写入异常才置 `version = 2`，否则下次启动接着跑。
+4. 仍没有密钥的账号在首页显示 `------`，用户可在编辑页补录密钥或删除。
 
 ### 4.4 Asset Kit 移除
 
-- 删除 `services/SecretVault.ets`。4.3 第 2 步的 Asset 读取与删除逻辑写在 `OtpAccountStore` 的迁移函数里，是代码中最后一处 Asset Kit 引用，下个大版本可整体删除。
+- 删除 `services/SecretVault.ets`。4.3 第 3 步的 Asset 读取与删除逻辑写在 `OtpAccountStore` 的迁移函数里，是代码中最后一处 Asset Kit 引用，下个大版本可整体删除。
 - 编辑页保存、扫码批量导入、备份导入直接写 `acct.secret` 后调一次 `insert` 或 `update`；管理页导出直接读 `a.secret`；首页删除只调 `OtpAccountStore.delete`。
 - 首页的 `secrets` 缓存字典删除，卡片出码直接用 `a.secret`。
 - `AccountDedup.existingSecretSet` 改为从 `listAll` 结果取 `secret` 列。
@@ -132,7 +132,7 @@ const CONFIG: relationalStore.StoreConfig = {
 
 1. AppGallery Connect -> 项目 -> Rotor 应用 -> 开通「云空间服务」（在「全部功能 > 构建 > 云空间服务」，可固定到左侧导航）。
 2. 创建容器，名称 `rotor`。
-3. 新建数据类型 `otp_account`，字段如下；高级设置里「端侧去重主键」勾选 `id`。
+3. 新建数据类型 `OtpAccount`，字段如下（字段名区分大小写）；高级设置里「端侧去重主键」勾选 `id`。
 
 | 字段 | 云侧类型 |
 | --- | --- |
@@ -183,10 +183,10 @@ class CloudSyncService {
 }
 ```
 
-- `init`：读 preferences；开关为开时，调 `setDistributedTables(['otp_account'], DISTRIBUTED_CLOUD, { autoSync: true })`（幂等，保证配置存在）、注册云端变更订阅、启动网络监听、调一次 `syncNow(ctx, false)`。开关为关且 preferences 里明确记过关闭时，重新下发一次 `{ autoSync: false, enableCloud: false }`，保证关闭状态在系统侧生效；从未开启过则不做其他事。
-- `enable`：调 `setDistributedTables(['otp_account'], DISTRIBUTED_CLOUD, { autoSync: true, enableCloud: true })`，成功后记开关为开，注册云端变更订阅，启动网络监听，调 `syncNow(ctx, true)`。`setDistributedTables` 失败则保持关闭状态并向调用方抛出，页面据此提示「开启失败」。首次 `setDistributedTables` 后系统自动把本地已有行全部上传；手动同步用时间优先模式合并云端已有数据（另一台设备先开启的情况）。
-- `disable`：调 `setDistributedTables(['otp_account'], DISTRIBUTED_CLOUD, { autoSync: false, enableCloud: false })`，记开关为关，取消云端变更订阅，停止网络监听，状态置 `OFF`。调用失败则保持开启状态并向调用方抛出，页面据此提示「关闭失败」。本地数据不动，云端数据保留；删除云端数据由用户在系统云空间的「停止同步并删除云端数据」完成。
-- `syncNow`：`store.cloudSync(SyncMode.SYNC_MODE_TIME_FIRST, ['otp_account'], progress)`（Promise 版）。`manual` 为 false 且距上次实际执行不足 30 秒直接返回，避免被云端限流，防抖计时只保存在内存里，进程启动后的第一次调用总会执行；`manual` 为 true 不受防抖限制，但同步进行中再次调用直接返回。进度回调里 `schedule` 为 `SYNC_FINISH` 时取 `code`，`SUCCESS` 则更新 `lastSyncAt` 并写入 preferences。
+- `init`：读 preferences；开关为开时，调 `setDistributedTables(['OtpAccount'], DISTRIBUTED_CLOUD, { autoSync: true })`（幂等，保证配置存在）、注册云端变更订阅、启动网络监听、调一次 `syncNow(ctx, false)`。开关为关且 preferences 里明确记过关闭时，重新下发一次 `{ autoSync: false, enableCloud: false }`，保证关闭状态在系统侧生效；从未开启过则不做其他事。
+- `enable`：调 `setDistributedTables(['OtpAccount'], DISTRIBUTED_CLOUD, { autoSync: true, enableCloud: true })`，成功后记开关为开，注册云端变更订阅，启动网络监听，调 `syncNow(ctx, true)`。`setDistributedTables` 失败则保持关闭状态并向调用方抛出，页面据此提示「开启失败」。首次 `setDistributedTables` 后系统自动把本地已有行全部上传；手动同步用时间优先模式合并云端已有数据（另一台设备先开启的情况）。
+- `disable`：调 `setDistributedTables(['OtpAccount'], DISTRIBUTED_CLOUD, { autoSync: false, enableCloud: false })`，记开关为关，取消云端变更订阅，停止网络监听，状态置 `OFF`。调用失败则保持开启状态并向调用方抛出，页面据此提示「关闭失败」。本地数据不动，云端数据保留；删除云端数据由用户在系统云空间的「停止同步并删除云端数据」完成。
+- `syncNow`：`store.cloudSync(SyncMode.SYNC_MODE_TIME_FIRST, ['OtpAccount'], progress)`（Promise 版）。`manual` 为 false 且距上次实际执行不足 30 秒直接返回，避免被云端限流，防抖计时只保存在内存里，进程启动后的第一次调用总会执行；`manual` 为 true 不受防抖限制，但同步进行中再次调用直接返回。进度回调里 `schedule` 为 `SYNC_FINISH` 时取 `code`，`SUCCESS` 则更新 `lastSyncAt` 并写入 preferences。
 - 所有 relationalStore 与 preferences 调用都包 try/catch，异常记 `console.error` 并把状态置为 `DISCONNECTED`、`code = -1`。
 - `RdbStore` 实例通过 `OtpAccountStore.store(ctx)` 取得（把现有模块私有的 `getStore` 暴露为静态方法），不另开库。
 
@@ -372,7 +372,7 @@ class CloudSyncService {
 ## 11. 验证方式
 
 - 不写单元测试。hvigor 编译、hdc 装真机、截图核对。
-- 升级验证：先装当前 master 构建并添加几个账号（含一个 HOTP），覆盖安装新版，确认账号与密钥完整、验证码正确、Asset Kit 已清空、`version` 为 2。
+- 升级验证：先装当前 master 构建并添加几个账号（含一个 HOTP），覆盖安装新版，确认账号与密钥完整、验证码正确、Asset Kit 已清空、`version` 为 2、库里只剩 `OtpAccount` 表。
 - 同步验证需要两台登录同一华为账号的真机。只有一台时用 AGC「数据记录调测」页看云端行是否出现，加密字段看不到内容，只能看 `id`、`type` 等明文列。
 - 场景：A 开启后云端出现全部行；B 开启后拉到全部账号并能出码；A 改名、B 更新；A 删除、B 消失；A 断网右上角切「与云断开」、恢复后回「已同步」；A 关闭后再改名，B 不变；HOTP 在 A 刷新，B 的计数器跟上。
 
