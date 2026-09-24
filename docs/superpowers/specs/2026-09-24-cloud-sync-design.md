@@ -186,7 +186,7 @@ class CloudSyncService {
 - `init`：读 preferences；开关为开时，调 `setDistributedTables(['OtpAccount'], DISTRIBUTED_CLOUD, { autoSync: true })`（幂等，保证配置存在）、注册云端变更订阅、启动网络监听、调一次 `syncNow(ctx, false)`。开关为关且 preferences 里明确记过关闭时，重新下发一次 `{ autoSync: false, enableCloud: false }`，保证关闭状态在系统侧生效；从未开启过则不做其他事。
 - `enable`：调 `setDistributedTables(['OtpAccount'], DISTRIBUTED_CLOUD, { autoSync: true, enableCloud: true })`，成功后记开关为开，注册云端变更订阅，启动网络监听，调 `syncNow(ctx, true)`。`setDistributedTables` 失败则保持关闭状态并向调用方抛出，页面据此提示「开启失败」。首次 `setDistributedTables` 后系统自动把本地已有行全部上传；手动同步用时间优先模式合并云端已有数据（另一台设备先开启的情况）。
 - `disable`：调 `setDistributedTables(['OtpAccount'], DISTRIBUTED_CLOUD, { autoSync: false, enableCloud: false })`，记开关为关，取消云端变更订阅，停止网络监听，状态置 `OFF`。调用失败则保持开启状态并向调用方抛出，页面据此提示「关闭失败」。本地数据不动，云端数据保留；删除云端数据由用户在系统云空间的「停止同步并删除云端数据」完成。
-- `syncNow`：`store.cloudSync(SyncMode.SYNC_MODE_TIME_FIRST, ['OtpAccount'], progress)`（Promise 版）。`manual` 为 false 且距上次实际执行不足 30 秒直接返回，避免被云端限流，防抖计时只保存在内存里，进程启动后的第一次调用总会执行；`manual` 为 true 不受防抖限制，但同步进行中再次调用直接返回。进度回调里 `schedule` 为 `SYNC_FINISH` 时取 `code`，`SUCCESS` 则更新 `lastSyncAt` 并写入 preferences。
+- `syncNow`：`store.cloudSync(SyncMode.SYNC_MODE_TIME_FIRST, ['OtpAccount'], progress)`（Promise 版）。`manual` 为 false 时，上次同步成功且距上次实际执行不足 30 秒直接返回，避免被云端限流；上次同步失败或尚未同步过则立即执行，保证从系统云空间打开开关返回后能马上刷新状态。防抖计时只保存在内存里；`manual` 为 true 不受防抖限制，但同步进行中再次调用直接返回。进度回调里 `schedule` 为 `SYNC_FINISH` 时取 `code`，`SUCCESS` 则更新 `lastSyncAt` 并写入 preferences。
 - 所有 relationalStore 与 preferences 调用都包 try/catch，异常记 `console.error` 并把状态置为 `DISCONNECTED`、`code = -1`。
 - `RdbStore` 实例通过 `OtpAccountStore.store(ctx)` 取得（把现有模块私有的 `getStore` 暴露为静态方法），不另开库。
 

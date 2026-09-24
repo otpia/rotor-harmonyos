@@ -28,7 +28,7 @@ const PREFS_NAME = 'rotor_settings';
 const KEY_ENABLED = 'cloudSyncEnabled';
 const KEY_LAST_SYNC = 'lastSyncAt';
 const KEY_GUIDE_SHOWN = 'syncGuideShown';
-// 自动触发的同步至少间隔 30 秒，避免被云端限流
+// 上次同步成功后 30 秒内不再自动触发，避免被云端限流
 const DEBOUNCE_MS = 30000;
 // 进度回调迟迟不报结束时按失败处理
 const SYNC_TIMEOUT_MS = 60000;
@@ -183,13 +183,13 @@ class CloudSync {
     this.emitStatus();
   }
 
-  // manual 为 false 时受 30 秒防抖约束；以进度回调的 SYNC_FINISH 作为结束
+  // manual 为 false 时，上次同步成功后 30 秒内直接返回，上次失败则立即重试；以进度回调的 SYNC_FINISH 作为结束
   async syncNow(ctx: common.Context, manual: boolean): Promise<void> {
     if (!this.enabled || this.syncing) {
       return;
     }
     const now = Date.now();
-    if (!manual && now - this.lastRunAt < DEBOUNCE_MS) {
+    if (!manual && this.code === relationalStore.ProgressCode.SUCCESS && now - this.lastRunAt < DEBOUNCE_MS) {
       return;
     }
     this.lastRunAt = now;
