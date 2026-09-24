@@ -3,6 +3,7 @@
     { "name": "module_desc", "value": "Rotor module" },
     { "name": "EntryAbility_desc", "value": "Rotor authenticator" },
     { "name": "EntryAbility_label", "value": "Rotor Authenticator" },
+    { "name": "camera_reason", "value": "Used to add accounts by scanning QR codes." },
     { "name": "brand_name", "value": "Rotor" },
     { "name": "bar_search", "value": "Search" },
     { "name": "bar_add", "value": "Add" },
