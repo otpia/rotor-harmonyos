@@ -247,7 +247,7 @@ class CloudSyncService {
 
 `HdsNavDestination`，标题「云同步」，标题栏样式与编辑页一致（`GRADIENT_BLUR` 加 `systemMaterialEffect` ADAPTIVE，`enableComponentSafeArea`）。内容为 `Scroll` 内三张卡，卡片样式沿用编辑页（`comp_background_list_card`、`corner_radius_level8`、行高 56）：
 
-1. 状态卡：左侧状态图标取系统符号库，已同步 `sys.symbol.checkmark_icloud_fill`，同步中 `sys.symbol.icloud_badge_arrow_2_circlepath`，与云断开 `sys.symbol.icloud_slash`，未开启 `sys.symbol.icloud`；右侧第一行状态文案（5.7），第二行「最近同步 <时间>」，`lastSyncAt` 为 0 时不显示第二行，时间按系统区域格式化为月日时分。卡片底部「立即同步」按钮，`OFF` 时不显示，`SYNCING` 时禁用。
+1. 状态卡：左侧状态图标取系统符号库，已同步 `sys.symbol.checkmark_icloud_fill`，同步中 `sys.symbol.icloud_badge_arrow_2_circlepath`，与云断开 `sys.symbol.icloud_slash`，未开启 `sys.symbol.icloud`；右侧第一行状态文案（5.7），第二行「最近同步 <时间>」，`lastSyncAt` 为 0 时不显示第二行，时间格式为 `YYYY-MM-DD HH:mm:ss`（24 小时制）。卡片底部「立即同步」按钮，`OFF` 时不显示，`SYNCING` 时禁用。
 2. 开关卡：一行「云同步」加系统 `Toggle({ type: ToggleType.Switch })`。打开时调 `enable`，失败则 Toggle 回到关闭并 toast「开启失败」；本安装首次打开成功后弹 `AlertDialog`（`ULTRA_THICK` 材质）：文案「还需在系统云空间中打开 Rotor 的同步开关」，按钮「去开启」执行 `openLink('hicloud://cloudDrive/getInfo?path=MainActivity')`、「稍后」关闭；是否首次用 preferences 键 `syncGuideShown` 记录。关闭时先弹确认：文案「关闭后本机数据保留，云端已同步的数据仍保存在云空间，可在系统云空间中删除」，按钮「取消」与「关闭」（警示色），确认才调 `disable`，失败则 Toggle 保持打开并 toast「关闭失败」；取消则 Toggle 回到打开。
 3. 入口卡：一行「云空间设置」带右侧 `sys.symbol.chevron_right`，点击 `openLink` 同上。
 

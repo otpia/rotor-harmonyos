@@ -88,19 +88,13 @@ export struct SyncPage {
     return $r('app.string.sync_state_failed');
   }
 
+  // 最近同步时间，格式为 YYYY-MM-DD HH:mm:ss
   private lastSyncText(): string {
-    try {
-      const fmt = new Intl.DateTimeFormat(undefined, {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      return getString(this.ctx(), 'sync_last_time', fmt.format(new Date(this.status.lastSyncAt)));
-    } catch (e) {
-      console.error('[SyncPage.lastSyncText]', e);
-      return '';
-    }
+    const d = new Date(this.status.lastSyncAt);
+    const pad = (n: number): string => n < 10 ? '0' + String(n) : String(n);
+    const time = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ` +
+      `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    return getString(this.ctx(), 'sync_last_time', time);
   }
 
   // 程序回写 switchOn 时也会触发，按服务的实际状态判断是否需要动作
