@@ -66,6 +66,8 @@ CREATE TABLE IF NOT EXISTS OtpAccount (
 
 库名沿用 `rotor.db`，表名为 `OtpAccount`：AGC 容器名必须与库名（去后缀）一致，数据类型名必须与表名一致，且只允许字母和数字、以字母开头。表列以后只能新增不能修改删除，本版字段即为定稿。
 
+`name`、`note`、`secret` 在 AGC 上是 Encrypted String，这三列的空值一律存 `NULL`、不存空串：云空间对空串加密会失败，整条记录随之上传失败。写入时空串转 `NULL`，读取时 `NULL` 按空串处理。
+
 `OtpAccount` 模型新增 `secret: string`，`defaultAccount()` 与 `cloneAccount()` 同步补上；读取行时每一列都按默认值兜底（`isColumnNull` 判断），云端来的行某列为空时不报错。
 
 ### 4.2 数据库配置
@@ -88,16 +90,17 @@ const CONFIG: relationalStore.StoreConfig = {
 | 版本 | 含义 |
 | --- | --- |
 | 0 | 现网库：旧表 `otp_account`（列带 `NOT NULL`，密钥在 Asset Kit）；或全新安装尚未建表 |
-| 2 | `OtpAccount` 已按 4.1 建好，存量密钥全部在 `secret` 列 |
+| 3 | `OtpAccount` 已按 4.1 建好，存量密钥全部在 `secret` 列，加密列没有空串 |
 
 步骤（按表的实际状态判断，中途被杀下次启动接着做）：
 
-1. `OtpAccount` 已存在且 `version` 为 2：已完成，直接返回。
+1. `OtpAccount` 已存在且 `version` 为 3：已完成，直接返回。
 2. `OtpAccount` 不存在：
    - 旧表 `otp_account` 存在：在一个事务内按 4.1 建 `OtpAccount`、`INSERT INTO OtpAccount (12 个旧列) SELECT 12 个旧列 FROM otp_account`（旧表已有 `secret` 列时连同 `secret` 一起搬）、`DROP TABLE otp_account`。事务失败整体回滚，下次启动重试。
    - 旧表也不存在：按 4.1 建表。
-3. 查 `SELECT id FROM OtpAccount WHERE secret IS NULL OR secret = ''`，逐行用别名 `otp_secret_<id>` 从 Asset Kit 读密钥：读到则 `UPDATE` 该行 `secret`，返回 1 行才 `asset.remove` 该条；读不到（Asset 里没有）视为该账号无密钥，跳过。全程没有读取或写入异常才置 `version = 2`，否则下次启动接着跑。
-4. 仍没有密钥的账号在首页显示 `------`，用户可在编辑页补录密钥或删除。
+3. 查 `SELECT id FROM OtpAccount WHERE secret IS NULL OR secret = ''`，逐行用别名 `otp_secret_<id>` 从 Asset Kit 读密钥：读到则 `UPDATE` 该行 `secret`，返回 1 行才 `asset.remove` 该条；读不到（Asset 里没有）视为该账号无密钥，跳过。
+4. 对 `name`、`note`、`secret` 各执行一次 `UPDATE OtpAccount SET <列> = NULL WHERE <列> = ''`。第 3、4 步全程没有异常才置 `version = 3`，否则下次启动接着跑。
+5. 仍没有密钥的账号在首页显示 `------`，用户可在编辑页补录密钥或删除。
 
 ### 4.4 Asset Kit 移除
 
@@ -300,7 +303,7 @@ class CloudSyncService {
 | 文件 | 改动 |
 | --- | --- |
 | `model/OtpAccount.ets` | 加 `secret` 字段 |
-| `services/OtpAccountStore.ets` | 4.1 表结构、4.3 迁移、`secret` 列读写、空值兜底、暴露 `store(ctx)` |
+| `services/OtpAccountStore.ets` | 4.1 表结构、4.3 迁移、`secret` 列读写、加密列空值存 `NULL`、空值兜底、暴露 `store(ctx)` |
 | `services/SecretVault.ets` | 删除 |
 | `services/AccountDedup.ets` | 从表取 `secret` |
 | `services/CloudSyncService.ets` | 新增，第 5 节全部 |
@@ -372,7 +375,7 @@ class CloudSyncService {
 ## 11. 验证方式
 
 - 不写单元测试。hvigor 编译、hdc 装真机、截图核对。
-- 升级验证：先装当前 master 构建并添加几个账号（含一个 HOTP），覆盖安装新版，确认账号与密钥完整、验证码正确、Asset Kit 已清空、`version` 为 2、库里只剩 `OtpAccount` 表。
+- 升级验证：先装当前 master 构建并添加几个账号（含一个 HOTP），覆盖安装新版，确认账号与密钥完整、验证码正确、Asset Kit 已清空、`version` 为 3、库里只剩 `OtpAccount` 表、加密列没有空串。
 - 同步验证需要两台登录同一华为账号的真机。只有一台时用 AGC「数据记录调测」页看云端行是否出现，加密字段看不到内容，只能看 `id`、`type` 等明文列。
 - 场景：A 开启后云端出现全部行；B 开启后拉到全部账号并能出码；A 改名、B 更新；A 删除、B 消失；A 断网右上角切「与云断开」、恢复后回「已同步」；A 关闭后再改名，B 不变；HOTP 在 A 刷新，B 的计数器跟上。
 

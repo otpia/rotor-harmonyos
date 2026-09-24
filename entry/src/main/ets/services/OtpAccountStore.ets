@@ -25,8 +25,10 @@ const CREATE_SQL = `CREATE TABLE IF NOT EXISTS ${ACCOUNT_TABLE} (
   secret TEXT
 )`;
 
-// 结构版本：2 为账号表已是端云同步结构且密钥全部在 secret 列
-const VERSION_CURRENT = 2;
+// 结构版本：3 为账号表已是端云同步结构、密钥全部在 secret 列、加密字段不存空串
+const VERSION_CURRENT = 3;
+// AGC 上设为 Encrypted String 的列；云空间加密空串会失败并导致整条记录上传失败，空值一律存 NULL
+const ENCRYPTED_COLUMNS: string[] = ['name', 'note', 'secret'];
 // 旧账号表：列带 NOT NULL 约束，密钥在 Asset Kit
 const LEGACY_TABLE = 'otp_account';
 const LEGACY_COLUMNS = 'id, name, note, type, period, digits, algorithm, counter, iconKey, orderIndex, createdAt, updatedAt';
@@ -162,7 +164,17 @@ async function migrateSecrets(s: relationalStore.RdbStore): Promise<boolean> {
   return ok;
 }
 
-// 按表的实际状态迁移：没有新表时从旧表搬数据或新建，再把 Asset Kit 中的密钥补进 secret 列，全部完成才记版本
+async function clearEmptyEncrypted(s: relationalStore.RdbStore): Promise<void> {
+  try {
+    for (const col of ENCRYPTED_COLUMNS) {
+      await s.executeSql(`UPDATE ${ACCOUNT_TABLE} SET ${col} = NULL WHERE ${col} = ''`);
+    }
+  } catch (e) {
+    throw new Error(String(e));
+  }
+}
+
+// 按表的实际状态迁移：没有新表时从旧表搬数据或新建，再把 Asset Kit 中的密钥补进 secret 列、加密字段的空串改为 NULL，全部完成才记版本
 async function migrate(s: relationalStore.RdbStore): Promise<void> {
   try {
     const hasTable = await tableExists(s, ACCOUNT_TABLE);
@@ -178,6 +190,7 @@ async function migrate(s: relationalStore.RdbStore): Promise<void> {
       }
     }
     if (await migrateSecrets(s)) {
+      await clearEmptyEncrypted(s);
       s.version = VERSION_CURRENT;
       console.info(`[OtpAccountStore.migrate] version -> ${VERSION_CURRENT}`);
     }
@@ -248,12 +261,17 @@ function rowToAccount(rs: relationalStore.ResultSet): OtpAccount {
   return a;
 }
 
+function nullIfEmpty(v: string): string | null {
+  return v.length > 0 ? v : null;
+}
+
+// 加密列的空值写 NULL，读取时由 colString 还原为空串
 function toBucket(a: OtpAccount): relationalStore.ValuesBucket {
   return {
-    'id': a.id, 'name': a.name, 'note': a.note, 'type': a.type,
+    'id': a.id, 'name': nullIfEmpty(a.name), 'note': nullIfEmpty(a.note), 'type': a.type,
     'period': a.period, 'digits': a.digits, 'algorithm': a.algorithm,
     'counter': a.counter, 'iconKey': a.iconKey, 'orderIndex': a.orderIndex,
-    'createdAt': a.createdAt, 'updatedAt': a.updatedAt, 'secret': a.secret
+    'createdAt': a.createdAt, 'updatedAt': a.updatedAt, 'secret': nullIfEmpty(a.secret)
   };
 }
 
