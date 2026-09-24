@@ -36,6 +36,11 @@ const ROUTE_ABOUT = 'about';
 const SEARCH_ID = 'rotor_search_input';
 // 底部悬浮栏高度加留白，列表末尾预留，避免最后一项被遮挡
 const LIST_END_OFFSET = 108;
+// 列表左右留白下限
+const LIST_SIDE_MARGIN = 16;
+// 拖拽浮起时框架固定把 ListItem 放大 1.05 倍，宽屏下留白需随列表宽度加大，保证浮起后卡片离屏幕边缘至少 8vp
+const LIFT_SCALE = 1.05;
+const LIFT_EDGE_GAP = 8;
 
 // 弹出层沉浸式材质：菜单用厚材质并自动反色，弹窗与半模态用超厚材质
 function menuMaterial(): uiMaterial.ImmersiveMaterial {
@@ -56,6 +61,7 @@ struct Index {
   @State query: string = '';
   @State importSheetOpen: boolean = false;
   @State searchMode: boolean = false;
+  @State listWidth: number = 0;
   @StorageProp('bottomSafeAreaPx') bottomSafeAreaPx: number = 0;
   private listScroller: ListScroller = new ListScroller();
   private tabsController: HdsTabsController = new HdsTabsController();
@@ -196,6 +202,12 @@ struct Index {
     } catch (e) {
       console.error('[Index.copy]', e);
     }
+  }
+
+  // 浮起后卡片每侧超出 `(列表宽 - 2 * 留白) * (LIFT_SCALE - 1) / 2`，据此反解留白
+  private sideMargin(): number {
+    const m = (LIFT_EDGE_GAP + this.listWidth * (LIFT_SCALE - 1) / 2) / LIFT_SCALE;
+    return Math.max(LIST_SIDE_MARGIN, Math.ceil(m));
   }
 
   // 拖拽排序按 id 定位，兼容搜索过滤后的可见索引
@@ -637,10 +649,10 @@ struct Index {
           ListItem() {
             this.CardBuilder(a)
           }
-          // 拖拽浮起时框架把 ListItem 放大 1.05 倍并按其圆角画阴影：圆角需与卡片一致，
+          // 拖拽浮起时框架把 ListItem 放大并按其圆角画阴影：圆角需与卡片一致，
           // 左右留白放在 ListItem 上而不是 List 的 padding，否则放大后的卡片会被 List 内容区裁掉
           .borderRadius($r('sys.float.corner_radius_level8'))
-          .margin({ left: 16, right: 16 })
+          .margin({ left: this.sideMargin(), right: this.sideMargin() })
           .swipeAction({
             end: {
               builder: () => {
@@ -660,6 +672,9 @@ struct Index {
       .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
       .contentEndOffset(LIST_END_OFFSET)
       .clipContent(ContentClipMode.SAFE_AREA)
+      .onAreaChange((_old: Area, area: Area) => {
+        this.listWidth = Number(area.width);
+      })
     }
   }
 
