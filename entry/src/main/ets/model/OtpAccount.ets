@@ -4,7 +4,7 @@ export enum OtpType {
   HOTP = 'hotp'
 }
 
-// 账号元数据；密钥不在此结构中，仅存于 Asset Kit
+// 账号数据，secret 为 base32 密钥
 export interface OtpAccount {
   id: string;
   name: string;
@@ -18,6 +18,7 @@ export interface OtpAccount {
   orderIndex: number;
   createdAt: number;
   updatedAt: number;
+  secret: string;
 }
 
 export function defaultAccount(): OtpAccount {
@@ -34,7 +35,8 @@ export function defaultAccount(): OtpAccount {
     iconKey: '',
     orderIndex: 0,
     createdAt: now,
-    updatedAt: now
+    updatedAt: now,
+    secret: ''
   };
 }
 
@@ -52,6 +54,7 @@ export function cloneAccount(a: OtpAccount): OtpAccount {
     iconKey: a.iconKey,
     orderIndex: a.orderIndex,
     createdAt: a.createdAt,
-    updatedAt: a.updatedAt
+    updatedAt: a.updatedAt,
+    secret: a.secret
   };
 }

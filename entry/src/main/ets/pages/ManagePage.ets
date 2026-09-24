@@ -5,7 +5,6 @@ import { uiMaterial } from '@kit.ArkUI';
 import { HdsNavDestination, HdsTabs, HdsTabsController, hdsMaterial, ScrollEffectType } from '@kit.UIDesignKit';
 import { OtpAccount } from '../model/OtpAccount';
 import { OtpAccountStore } from '../services/OtpAccountStore';
-import { SecretVault } from '../services/SecretVault';
 import { encryptBackup, BackupFile } from '../utils/BackupCrypto';
 import { getString } from '../utils/I18n';
 import { IssuerAvatar } from '../components/IssuerAvatar';
@@ -162,7 +161,6 @@ export struct ManagePage {
       this.busy = true;
       for (const id of ids) {
         try {
-          await SecretVault.remove(id);
           await OtpAccountStore.delete(ctx, id);
         } catch (e) {
           console.error('[ManagePage.runDelete.item]', e);
@@ -201,7 +199,7 @@ export struct ManagePage {
         if (!this.selected[a.id]) {
           continue;
         }
-        const sec = await SecretVault.get(a.id);
+        const sec = a.secret;
         if (!sec) {
           continue;
         }

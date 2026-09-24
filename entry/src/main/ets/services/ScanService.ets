@@ -4,7 +4,6 @@ import { util } from '@kit.ArkTS';
 import { parseOtpAuth, ParsedOtpAuth } from '../utils/OtpAuthUri';
 import { isMigrationUri, parseMigrationUri } from '../utils/MigrationUri';
 import { OtpAccountStore } from './OtpAccountStore';
-import { SecretVault } from './SecretVault';
 import { existingSecretSet } from './AccountDedup';
 
 export enum ScanResultKind {
@@ -100,7 +99,7 @@ async function importMigration(ctx: common.UIAbilityContext, uri: string, result
         const now = Date.now();
         acct.createdAt = now;
         acct.updatedAt = now;
-        await SecretVault.put(acct.id, item.secret);
+        acct.secret = item.secret;
         await OtpAccountStore.insert(ctx, acct);
         existingSet.add(item.secret);
         imported += 1;

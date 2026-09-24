@@ -4,7 +4,6 @@ import { uiMaterial } from '@kit.ArkUI';
 import { HdsNavDestination, hdsMaterial, ScrollEffectType } from '@kit.UIDesignKit';
 import { OtpAccount, OtpType, cloneAccount, defaultAccount } from '../model/OtpAccount';
 import { OtpAccountStore } from '../services/OtpAccountStore';
-import { SecretVault } from '../services/SecretVault';
 import { isValidBase32, base32Normalize } from '../utils/Base32';
 import { getString } from '../utils/I18n';
 import { IssuerAvatar } from '../components/IssuerAvatar';
@@ -37,12 +36,8 @@ export struct EditPage {
       this.isEdit = true;
       if (p.prefilled) {
         this.account = cloneAccount(p.prefilled);
+        this.secret = p.prefilled.secret;
       }
-      SecretVault.get(p.id).then((s: string) => {
-        this.secret = s;
-      }).catch(() => {
-        this.secret = '';
-      });
     } else if (p.prefilled) {
       this.account = cloneAccount(p.prefilled);
       this.secret = p.prefilledSecret || '';
@@ -82,7 +77,7 @@ export struct EditPage {
         this.account.orderIndex = (await OtpAccountStore.maxOrderIndex(ctx)) + 1;
       }
       this.account.updatedAt = now;
-      await SecretVault.put(this.account.id, base32Normalize(this.secret));
+      this.account.secret = base32Normalize(this.secret);
       if (this.isEdit) {
         await OtpAccountStore.update(ctx, this.account);
       } else {

@@ -3,7 +3,6 @@ import { fileIo } from '@kit.CoreFileKit';
 import { util } from '@kit.ArkTS';
 import { defaultAccount, OtpAccount, OtpType } from '../model/OtpAccount';
 import { OtpAccountStore } from './OtpAccountStore';
-import { SecretVault } from './SecretVault';
 import { existingSecretSet } from './AccountDedup';
 import { decryptBackup, BackupFile } from '../utils/BackupCrypto';
 
@@ -72,7 +71,7 @@ export async function importBackup(ctx: common.UIAbilityContext, uri: string, pa
       const now = Date.now();
       acct.createdAt = now;
       acct.updatedAt = now;
-      await SecretVault.put(acct.id, a.secret);
+      acct.secret = a.secret;
       await OtpAccountStore.insert(ctx, acct);
       existingSet.add(a.secret);
       count += 1;

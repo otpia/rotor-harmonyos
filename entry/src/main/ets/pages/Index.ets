@@ -14,7 +14,6 @@ import {
 } from '@kit.UIDesignKit';
 import { OtpAccount, OtpType } from '../model/OtpAccount';
 import { OtpAccountStore } from '../services/OtpAccountStore';
-import { SecretVault } from '../services/SecretVault';
 import { totp, hotp, remainingSeconds } from '../services/OtpEngine';
 import { TickerService } from '../services/TickerService';
 import { importBackup } from '../services/BackupImporter';
@@ -73,7 +72,6 @@ struct Index {
   @Provide('pathStack') pathStack: NavPathStack = new NavPathStack();
   @State accounts: OtpAccount[] = [];
   @State codes: Record<string, CodeState> = {};
-  @State secrets: Record<string, string> = {};
   @State query: string = '';
   @State importSheetOpen: boolean = false;
   @State searchMode: boolean = false;
@@ -131,26 +129,22 @@ struct Index {
     try {
       const ctx = this.ctx();
       this.accounts = await OtpAccountStore.listAll(ctx);
-      for (const a of this.accounts) {
-        if (!this.secrets[a.id]) {
-          this.secrets[a.id] = await SecretVault.get(a.id);
-        }
-      }
-      await this.tick(Date.now());
+      await this.tick(Date.now(), true);
     } catch (e) {
       console.error('[Index.refresh]', e);
     }
   }
 
-  private async tick(now: number): Promise<void> {
+  // force 为 true 时忽略上一次结果全部重算，用于列表数据变化之后
+  private async tick(now: number, force: boolean = false): Promise<void> {
     try {
       const next: Record<string, CodeState> = {};
       for (const a of this.accounts) {
         const prev = this.codes[a.id];
         let code = prev ? prev.code : '------';
-        const sec = this.secrets[a.id];
+        const sec = a.secret;
         if (a.type === OtpType.HOTP) {
-          if (sec && (!prev || prev.code === '------')) {
+          if (sec && (force || !prev || prev.code === '------')) {
             try {
               code = await hotp(sec, a.counter, a.digits, a.algorithm);
             } catch (_e) {
@@ -160,7 +154,7 @@ struct Index {
           next[a.id] = { code, remaining: a.period };
         } else {
           const remaining = remainingSeconds(now, a.period);
-          if (sec && (!prev || remaining === a.period || prev.code === '------')) {
+          if (sec && (force || !prev || remaining === a.period || prev.code === '------')) {
             try {
               code = await totp(sec, now, a.period, a.digits, a.algorithm);
             } catch (_e) {
@@ -178,7 +172,7 @@ struct Index {
 
   private async refreshHotp(a: OtpAccount): Promise<void> {
     try {
-      const sec = this.secrets[a.id];
+      const sec = a.secret;
       if (!sec) {
         return;
       }
@@ -306,7 +300,6 @@ struct Index {
 
   private async confirmDelete(id: string): Promise<void> {
     try {
-      await SecretVault.remove(id);
       await OtpAccountStore.delete(this.ctx(), id);
       this.refresh();
     } catch (e) {
