@@ -43,14 +43,6 @@
         "name": "ohos.permission.GET_NETWORK_INFO"
       },
       {
-        "name": "ohos.permission.CAMERA",
-        "reason": "$string:camera_reason",
-        "usedScene": {
-          "abilities": [ "EntryAbility" ],
-          "when": "inuse"
-        }
-      },
-      {
         "name": "ohos.permission.VIBRATE"
       }
     ],

@@ -357,8 +357,6 @@ struct Index {
     } else if (r.kind === ScanResultKind.IMPORTED) {
       this.toast(getString(ctx, 'toast_imported_count', r.importedCount));
       this.refresh();
-    } else if (r.kind === ScanResultKind.PERMISSION_DENIED) {
-      this.toast($r('app.string.toast_camera_required'));
     } else if (r.kind === ScanResultKind.UNRECOGNIZED) {
       this.toast($r('app.string.toast_qr_unrecognized'));
     } else if (r.kind === ScanResultKind.NO_ACCOUNT) {

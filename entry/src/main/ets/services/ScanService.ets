@@ -1,5 +1,5 @@
 import { scanCore, scanBarcode } from '@kit.ScanKit';
-import { abilityAccessCtrl, common, PermissionRequestResult, Permissions } from '@kit.AbilityKit';
+import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS';
 import { parseOtpAuth, ParsedOtpAuth } from '../utils/OtpAuthUri';
 import { isMigrationUri, parseMigrationUri } from '../utils/MigrationUri';
@@ -8,13 +8,12 @@ import { existingSecretSet } from './AccountDedup';
 
 export enum ScanResultKind {
   CANCELLED = 0,
-  PERMISSION_DENIED = 1,
-  UNRECOGNIZED = 2,
-  NO_ACCOUNT = 3,
+  UNRECOGNIZED = 1,
+  NO_ACCOUNT = 2,
   // 单个 otpauth 账号，需进入编辑页确认
-  SINGLE = 4,
+  SINGLE = 3,
   // Google Authenticator 迁移二维码，已直接落库
-  IMPORTED = 5
+  IMPORTED = 4
 }
 
 export class ScanResult {
@@ -23,24 +22,9 @@ export class ScanResult {
   importedCount: number = 0;
 }
 
-// 申请相机权限并拉起系统扫码，解析结果交给调用方处理
+// 拉起 Scan Kit 默认界面扫码（相机由系统预授权），解析结果交给调用方处理
 export async function scanQrCode(ctx: common.UIAbilityContext): Promise<ScanResult> {
   const result = new ScanResult();
-  try {
-    const atManager = abilityAccessCtrl.createAtManager();
-    const perms: Permissions[] = ['ohos.permission.CAMERA'];
-    const r: PermissionRequestResult = await atManager.requestPermissionsFromUser(ctx, perms);
-    const granted = r.authResults && r.authResults[0] === 0;
-    if (!granted) {
-      result.kind = ScanResultKind.PERMISSION_DENIED;
-      return result;
-    }
-  } catch (e) {
-    console.error('[ScanService.permission]', e);
-    result.kind = ScanResultKind.PERMISSION_DENIED;
-    return result;
-  }
-
   let text = '';
   try {
     const opts: scanBarcode.ScanOptions = {
