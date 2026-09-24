@@ -2,7 +2,8 @@
   "string": [
     { "name": "module_desc", "value": "Rotor module" },
     { "name": "EntryAbility_desc", "value": "Rotor authenticator" },
-    { "name": "EntryAbility_label", "value": "Rotor" },
+    { "name": "EntryAbility_label", "value": "Rotor 身份验证器" },
+    { "name": "brand_name", "value": "Rotor" },
     { "name": "bar_search", "value": "搜索" },
     { "name": "bar_add", "value": "添加" },
     { "name": "bar_more", "value": "更多" },

@@ -42,14 +42,14 @@
   <text x="540" y="900" text-anchor="middle"
         font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
         font-size="44" font-weight="500" fill="#3D4759"
-        letter-spacing="2">本地优先的双因素动态验证码</text>
+        letter-spacing="2">两步验证动态码，扫码即可添加</text>
 
   <g transform="translate(0 1080)">
     <g transform="translate(180 0)">
       <rect x="0" y="0" width="240" height="92" rx="46" fill="#FFFFFF" stroke="#D5DEEC" stroke-width="2"/>
       <text x="120" y="60" text-anchor="middle"
             font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-            font-size="36" font-weight="600" fill="#0A59F7">RFC 6238</text>
+            font-size="36" font-weight="600" fill="#0A59F7">2FA / MFA</text>
     </g>
     <g transform="translate(440 0)">
       <rect x="0" y="0" width="200" height="92" rx="46" fill="#FFFFFF" stroke="#D5DEEC" stroke-width="2"/>
@@ -61,7 +61,7 @@
       <rect x="0" y="0" width="240" height="92" rx="46" fill="#FFFFFF" stroke="#D5DEEC" stroke-width="2"/>
       <text x="120" y="60" text-anchor="middle"
             font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-            font-size="36" font-weight="600" fill="#0A59F7">无需联网</text>
+            font-size="36" font-weight="600" fill="#0A59F7">多端同步</text>
     </g>
   </g>
 
@@ -70,7 +70,7 @@
         font-size="56" font-weight="700" fill="#0F1B2D" letter-spacing="3">为 HarmonyOS 而生</text>
   <text x="540" y="1460" text-anchor="middle"
         font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-        font-size="34" font-weight="400" fill="#5A6478" letter-spacing="2">秘钥仅保存在本机系统级凭据库</text>
+        font-size="34" font-weight="400" fill="#5A6478" letter-spacing="2">密钥默认只存本机，可选华为云空间同步</text>
 
   <g transform="translate(390 1620)">
     <rect x="0" y="0" width="300" height="120" rx="60" fill="#0A59F7"/>

@@ -777,7 +777,7 @@ struct Index {
     .hideBackButton(true)
     .titleBar({
       content: {
-        title: { mainTitle: $r('app.string.EntryAbility_label') }
+        title: { mainTitle: $r('app.string.brand_name') }
       },
       style: {
         scrollEffectOpts: {

@@ -3,6 +3,7 @@
 ## 平台
 - HarmonyOS NEXT，ArkTS + ArkUI 声明式；SDK 版本以 `build-profile.json5` 为准
 - Bundle：`com.liasica.rotor`
+- 应用名称：桌面与商店为「Rotor 身份验证器」（`app_name`、`EntryAbility_label`，须与软著登记名称一致），应用内首页标题与关于页用 `brand_name`（Rotor）；上架文案与宣传图见 `README.md`
 
 ## 设计规范
 - 视觉与交互按 HarmonyOS 官方 UI Design Kit（HDS 组件）与沉浸光感规范实现，不参考外部设计稿

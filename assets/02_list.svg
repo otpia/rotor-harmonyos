@@ -17,10 +17,10 @@
 
   <text x="540" y="180" text-anchor="middle"
         font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-        font-size="84" font-weight="800" fill="#0F1B2D" letter-spacing="2">30 秒一变 · 一目了然</text>
+        font-size="84" font-weight="800" fill="#0F1B2D" letter-spacing="2">动态验证码，一目了然</text>
   <text x="540" y="262" text-anchor="middle"
         font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-        font-size="38" font-weight="400" fill="#5A6478" letter-spacing="2">圆环倒计时 · 验证码过期前自动高亮</text>
+        font-size="38" font-weight="400" fill="#5A6478" letter-spacing="2">圆环倒计时，快过期时变色，点一下即复制</text>
 
   <!-- Phone mockup: 920×1380, 内部按 vp→px=1.8 系数 -->
   <g filter="url(#phoneShadow)" transform="translate(80 360)">

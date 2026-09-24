@@ -32,10 +32,10 @@
 
   <text x="540" y="180" text-anchor="middle"
         font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-        font-size="84" font-weight="800" fill="#0F1B2D" letter-spacing="2">扫码秒加 · 一键导入</text>
+        font-size="84" font-weight="800" fill="#0F1B2D" letter-spacing="2">扫码添加，批量迁移</text>
   <text x="540" y="262" text-anchor="middle"
         font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-        font-size="38" font-weight="400" fill="#5A6478" letter-spacing="2">支持 otpauth:// 标准二维码 · 也可手动输入</text>
+        font-size="38" font-weight="400" fill="#5A6478" letter-spacing="2">支持相册识别，可批量导入 Google 身份验证器账号</text>
 
   <g filter="url(#phoneShadow)" transform="translate(80 360)">
     <rect x="0" y="0" width="920" height="1380" rx="56" fill="url(#phoneBg)"/>
@@ -83,17 +83,17 @@
         <path d="M 12 20 L 18 26 L 28 14" stroke="#FFFFFF" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
         <text x="60" y="20"
               font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-              font-size="26" font-weight="600" fill="#FFFFFF">自动识别</text>
+              font-size="26" font-weight="600" fill="#FFFFFF">相册识别</text>
         <text x="60" y="56"
               font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-              font-size="22" fill="#FFFFFF" fill-opacity="0.6">扫一下就好</text>
+              font-size="22" fill="#FFFFFF" fill-opacity="0.6">截图也能扫</text>
       </g>
       <g transform="translate(330 50)">
         <circle cx="20" cy="20" r="20" fill="#0A59F7"/>
         <path d="M 12 20 L 18 26 L 28 14" stroke="#FFFFFF" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
         <text x="60" y="20"
               font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-              font-size="26" font-weight="600" fill="#FFFFFF">秘钥不入网</text>
+              font-size="26" font-weight="600" fill="#FFFFFF">本机识别</text>
         <text x="60" y="56"
               font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
               font-size="22" fill="#FFFFFF" fill-opacity="0.6">扫描全程离线</text>
@@ -103,10 +103,10 @@
         <path d="M 12 20 L 18 26 L 28 14" stroke="#FFFFFF" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
         <text x="60" y="20"
               font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-              font-size="26" font-weight="600" fill="#FFFFFF">兼容标准</text>
+              font-size="26" font-weight="600" fill="#FFFFFF">批量迁移</text>
         <text x="60" y="56"
               font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-              font-size="22" fill="#FFFFFF" fill-opacity="0.6">RFC 6238</text>
+              font-size="22" fill="#FFFFFF" fill-opacity="0.6">一次导入多个</text>
       </g>
     </g>
   </g>

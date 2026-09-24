@@ -26,10 +26,10 @@
 
   <text x="540" y="200" text-anchor="middle"
         font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-        font-size="84" font-weight="800" fill="#FFFFFF" letter-spacing="2">多设备 · 同一套验证码</text>
+        font-size="84" font-weight="800" fill="#FFFFFF" letter-spacing="2">多设备，同一套验证码</text>
   <text x="540" y="282" text-anchor="middle"
         font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-        font-size="38" font-weight="400" fill="#A8B2C7" letter-spacing="2">华为云空间同步 · 同账号设备自动一致</text>
+        font-size="38" font-weight="400" fill="#A8B2C7" letter-spacing="2">经华为云空间同步，同一华为账号的设备自动一致</text>
 
   <!-- 大盾牌 -->
   <g filter="url(#shieldGlow)" transform="translate(380 400)">
@@ -47,7 +47,7 @@
 
   <text x="540" y="900" text-anchor="middle"
         font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-        font-size="44" font-weight="700" fill="#FFFFFF" letter-spacing="4">本地优先 · 同步可选</text>
+        font-size="44" font-weight="700" fill="#FFFFFF" letter-spacing="4">本地优先，同步可选</text>
   <text x="540" y="970" text-anchor="middle"
         font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
         font-size="28" fill="#A8B2C7" letter-spacing="2">不开同步，数据不出本机</text>
@@ -81,10 +81,10 @@
     </g>
     <text x="160" y="74"
           font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-          font-size="34" font-weight="600" fill="#FFFFFF">无广告 · 无埋点 · 无追踪</text>
+          font-size="34" font-weight="600" fill="#FFFFFF">无广告、无埋点、无追踪</text>
     <text x="160" y="120"
           font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-          font-size="26" fill="#A8B2C7">同步由系统云空间完成 · 不连接任何第三方服务器</text>
+          font-size="26" fill="#A8B2C7">同步由系统云空间完成，不连接第三方服务器</text>
   </g>
 
   <g transform="translate(80 1480)">
@@ -100,10 +100,10 @@
     </g>
     <text x="160" y="74"
           font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-          font-size="34" font-weight="600" fill="#FFFFFF">RFC 6238 标准兼容</text>
+          font-size="34" font-weight="600" fill="#FFFFFF">TOTP / HOTP 标准兼容</text>
     <text x="160" y="120"
           font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-          font-size="26" fill="#A8B2C7">与 Google Authenticator 等主流验证器互通</text>
+          font-size="26" fill="#A8B2C7">可导入 Google 身份验证器，与主流验证器通用</text>
   </g>
 
   <!-- 底部 logo -->

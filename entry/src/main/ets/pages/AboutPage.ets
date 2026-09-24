@@ -27,7 +27,7 @@ export struct AboutPage {
             .width(96)
             .height(96)
             .margin({ top: 24 })
-          Text($r('app.string.EntryAbility_label'))
+          Text($r('app.string.brand_name'))
             .fontSize($r('sys.float.Title_S'))
             .fontWeight(FontWeight.Medium)
             .fontColor($r('sys.color.font_primary'))

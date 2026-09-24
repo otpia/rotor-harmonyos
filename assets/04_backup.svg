@@ -20,10 +20,10 @@
 
   <text x="540" y="180" text-anchor="middle"
         font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-        font-size="84" font-weight="800" fill="#0F1B2D" letter-spacing="2">AES 加密备份 · 安心迁移</text>
+        font-size="84" font-weight="800" fill="#0F1B2D" letter-spacing="2">加密备份，换机恢复</text>
   <text x="540" y="262" text-anchor="middle"
         font-family="PingFang SC, Hiragino Sans GB, Heiti SC, sans-serif"
-        font-size="38" font-weight="400" fill="#5A6478" letter-spacing="2">自定义密码 · 离线生成 · 永不上云</text>
+        font-size="38" font-weight="400" fill="#5A6478" letter-spacing="2">自设密码，AES-256 加密，重复账号自动跳过</text>
 
   <!-- Phone mockup, vp→px 系数 1.8 -->
   <g filter="url(#phoneShadow)" transform="translate(80 360)">
