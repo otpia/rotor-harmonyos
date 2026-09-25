@@ -94,3 +94,9 @@ rsvg-convert -w 1080 -h 1920 assets/store-v2/01-hero.svg -o assets/store-v2/01-h
 - 云同步：开启后经华为云空间同步，`secret`、`name`、`note` 为云侧加密字段。关闭同步后，本机数据保留，已同步的云端数据可在系统云空间中管理或删除。
 - 文件备份：`.rotorbak` 文件采用密码加密，保存到用户通过系统文件选择器指定的位置。
 - 系统备份：`EntryBackupAbility` 为非导出的备份扩展，`allowToBackupRestore` 为 `true`，应用数据可随系统备份恢复或换机通道迁移。
+
+## 开源许可
+
+- 本项目以 GPL-3.0 许可开源，全文见 `LICENSE`。
+- 服务图标与匹配规则来自 [2FAS Auth](https://github.com/twofas/2fas-android)（GPL-3.0）。百度智能云、火山引擎、七牛云图标来自 [thesvg](https://github.com/glincker/thesvg)（MIT），Gitee、1Panel 图标来自 thesvg（CC0）。各品牌标志归其所有者。
+- 图标资源与匹配数据由 `scripts/gen_issuer_icons.py` 生成，更新时运行 `uv run scripts/gen_issuer_icons.py`。

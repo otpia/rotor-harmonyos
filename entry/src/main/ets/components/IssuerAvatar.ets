@@ -1,6 +1,6 @@
 import { issuerImage, avatarInitial, avatarColor } from '../utils/IssuerIcon';
 
-// 服务图标：命中内置品牌图时显示图片，否则显示首字母圆形头像
+// 服务图标：命中内置品牌图标时按原比例完整显示，深浅色版本由资源目录自动切换；否则显示首字母圆形头像
 @Component
 export struct IssuerAvatar {
   @Prop name: string = '';
@@ -20,7 +20,9 @@ export struct IssuerAvatar {
       Image(this.image())
         .width(this.diameter)
         .height(this.diameter)
-        .borderRadius(this.diameter / 2)
+        .objectFit(ImageFit.Contain)
+        .interpolation(ImageInterpolation.High)
+        .draggable(false)
     } else {
       Text(avatarInitial(this.name))
         .fontSize(this.diameter * 0.45)
