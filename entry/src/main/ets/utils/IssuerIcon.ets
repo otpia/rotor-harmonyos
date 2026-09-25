@@ -1,8 +1,7 @@
 import { ISSUER_ICONS, IssuerIconEntry, IssuerRule } from './IssuerIconData';
 
-// 账号 iconKey 的前缀：内置图标、按链接下载缓存的图标、从图库导入的图标；空串表示按名称自动识别
+// 账号 iconKey 的前缀：内置图标、从图库导入的图标；空串表示按名称自动识别
 export const ICON_LIB = 'lib:';
-export const ICON_URL = 'url:';
 export const ICON_IMG = 'img:';
 
 // 首字母头像背景色，取系统多彩色板，按名称哈希稳定选色

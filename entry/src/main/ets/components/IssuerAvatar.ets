@@ -3,7 +3,6 @@ import { IconCache } from '../services/IconCache';
 import {
   ICON_IMG,
   ICON_LIB,
-  ICON_URL,
   avatarColor,
   avatarInitial,
   iconByKey,
@@ -32,32 +31,19 @@ export struct IssuerAvatar {
     this.loadCustom();
   }
 
-  // 链接或图库图标：有缓存直接显示；链接图标没有缓存时后台下载，完成后刷新
+  // 图库图标：本地文件存在时显示，其他设备上没有文件时回退到内置图标或首字母头像
   private loadCustom(): void {
-    const key = this.iconKey;
     this.customUri = '';
-    if (!key.startsWith(ICON_URL) && !key.startsWith(ICON_IMG)) {
+    if (!this.iconKey.startsWith(ICON_IMG)) {
       return;
     }
     const host = this.getUIContext().getHostContext();
     if (host === undefined) {
       return;
     }
-    const ctx = host as common.Context;
-    const path = IconCache.cachedPath(ctx, key);
+    const path = IconCache.cachedPath(host as common.Context, this.iconKey);
     if (path.length > 0) {
       this.customUri = IconCache.uriOf(path);
-      return;
-    }
-    if (key.startsWith(ICON_URL)) {
-      IconCache.download(ctx, key.substring(ICON_URL.length)).then(() => {
-        const p = IconCache.cachedPath(ctx, key);
-        if (this.iconKey === key && p.length > 0) {
-          this.customUri = IconCache.uriOf(p);
-        }
-      }).catch((e: Error) => {
-        console.error('[IssuerAvatar.loadCustom]', e.message);
-      });
     }
   }
 

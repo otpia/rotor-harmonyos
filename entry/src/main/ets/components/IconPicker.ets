@@ -2,12 +2,10 @@ import { common } from '@kit.AbilityKit';
 import { uiMaterial } from '@kit.ArkUI';
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { IconCache } from '../services/IconCache';
-import { ICON_IMG, ICON_LIB, ICON_URL, searchIcons } from '../utils/IssuerIcon';
+import { ICON_IMG, ICON_LIB, searchIcons } from '../utils/IssuerIcon';
 import { IssuerIconEntry } from '../utils/IssuerIconData';
 
 const ROW_HEIGHT = 56;
-// 按钮高 40vp，点击热区上下各扩 4vp，达到 48vp
-const HOT_ZONE: Rectangle = { x: 0, y: -4, width: '100%', height: 48 };
 
 class IconSource implements IDataSource {
   private items: IssuerIconEntry[] = [];
@@ -46,7 +44,7 @@ class IconSource implements IDataSource {
   }
 }
 
-// 半模态内的图标选择：搜索内置图标，恢复自动识别，从图库导入或按链接下载，结果以 iconKey 回传；
+// 半模态内的图标选择：搜索内置图标，恢复自动识别或从图库导入，结果以 iconKey 回传；
 // 搜索框有内容时收起上方入口，把空间留给结果
 @Component
 export struct IconPicker {
@@ -54,15 +52,11 @@ export struct IconPicker {
   onPick: (iconKey: string) => void = () => {
   };
   @State query: string = '';
-  @State url: string = '';
   @State busy: boolean = false;
   @State resultCount: number = 0;
   private source: IconSource = new IconSource([]);
 
   aboutToAppear(): void {
-    if (this.current.startsWith(ICON_URL)) {
-      this.url = this.current.substring(ICON_URL.length);
-    }
     const items = searchIcons('');
     this.source.setItems(items);
     this.resultCount = items.length;
@@ -105,24 +99,6 @@ export struct IconPicker {
     } catch (e) {
       console.error('[IconPicker.pickPhoto]', e);
       this.toast($r('app.string.icon_read_failed'));
-    } finally {
-      this.busy = false;
-    }
-  }
-
-  private async download(): Promise<void> {
-    const url = this.url.trim();
-    if (!/^https?:\/\/\S+$/i.test(url)) {
-      this.toast($r('app.string.icon_url_invalid'));
-      return;
-    }
-    this.busy = true;
-    try {
-      await IconCache.downloadNow(this.ctx(), url);
-      this.onPick(ICON_URL + url);
-    } catch (e) {
-      console.error('[IconPicker.download]', e);
-      this.toast($r('app.string.icon_download_failed'));
     } finally {
       this.busy = false;
     }
@@ -181,38 +157,6 @@ export struct IconPicker {
       .onClick(() => {
         this.pickPhoto();
       })
-
-      this.RowDivider()
-
-      Row({ space: 8 }) {
-        TextInput({ text: this.url, placeholder: $r('app.string.icon_url_hint') })
-          .type(InputType.URL)
-          .fontSize($r('sys.float.Body_L'))
-          .backgroundColor(Color.Transparent)
-          .padding({ left: 0, right: 0 })
-          .height(40)
-          .layoutWeight(1)
-          .onChange((v: string) => {
-            this.url = v;
-          })
-        if (this.busy) {
-          LoadingProgress()
-            .width(40)
-            .height(40)
-        } else {
-          Button($r('app.string.icon_download'))
-            .buttonStyle(ButtonStyleMode.NORMAL)
-            .controlSize(ControlSize.NORMAL)
-            .responseRegion(HOT_ZONE)
-            .enabled(this.url.trim().length > 0)
-            .onClick(() => {
-              this.download();
-            })
-        }
-      }
-      .width('100%')
-      .height(ROW_HEIGHT)
-      .padding({ left: 16, right: 8 })
     }
     .width('100%')
     .backgroundColor($r('sys.color.comp_background_list_card'))
