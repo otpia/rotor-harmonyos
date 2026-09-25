@@ -1,134 +1,96 @@
 # Rotor 身份验证器：HarmonyOS 上架素材
 
-> 本仓库为 Rotor 身份验证器——一款本地优先的 HarmonyOS NEXT 两步验证（2FA）动态验证码 App。本文档汇总应用商店上架所需的文案与宣传图素材。
-
----
+Rotor 身份验证器是一款面向 HarmonyOS NEXT 的两步验证工具，支持离线生成验证码、扫码添加、批量迁移、加密备份与可选云同步。本文档提供上架文案与宣传图素材。
 
 ## 应用名称
 
-**Rotor 身份验证器**（英文：Rotor Authenticator）
+**Rotor 身份验证器**（英文：Rotor Authenticator）。
 
-商店名称、安装后的桌面名称、软著登记的软件名称（或简称）三者须一字不差，一个自然年内最多修改 2 次。应用内首页标题与关于页显示品牌名 Rotor。
+桌面与商店展示「Rotor 身份验证器」，应用内首页与关于页展示品牌名 Rotor。
 
----
+## 一句话简介
 
-## 一句话简介（中文 17 字以内）
+**离线验证码，扫码添加与云同步**
 
-**两步验证动态码，扫码添加，多端同步**
+共 14 个字符，含标点。
 
-备选：
+## 应用介绍
 
-- 二次验证、两步验证动态码生成器
-- 两步验证动态口令，支持批量迁移
-
----
-
-## 应用介绍（8000 字以内）
-
-以下为纯文本，整段粘贴到 AppGallery Connect：
+以下内容可粘贴到 AppGallery Connect：
 
 ```text
-Rotor 身份验证器（Rotor Authenticator）是为 HarmonyOS 打造的两步验证工具。网站或 App 开启两步验证（也叫二次验证、双重验证、2FA、MFA）后，Rotor 为账号生成每 30 秒刷新一次的 6 位动态验证码（动态口令），登录时输入即可。遵循 TOTP（RFC 6238）与 HOTP（RFC 4226）标准，适用于 GitHub、阿里云、腾讯云等支持验证器 App 的服务。
+Rotor 身份验证器是面向 HarmonyOS 的两步验证工具。为支持验证器的网站和 App 添加账号后，即可在本机离线生成动态验证码，登录时点按复制使用。
 
-- 扫码添加：扫描网站给出的二维码即可添加账号，也可识别相册中的二维码图片，或手动输入设置密钥。
-- 批量迁移：扫描 Google 身份验证器导出的迁移二维码，一次导入多个账号。
-- 验证码一目了然：大字号显示，圆环倒计时，快过期时变色提醒，点一下即复制。
-- 多设备同步：开启云同步后，经华为云空间在登录同一华为账号的设备间自动同步，密钥、名称、描述以加密字段存储；不开启时数据只存本机。
-- 加密备份：自设密码，以 AES-256 加密导出备份文件，换机后导入即可恢复，重复账号自动跳过。
-- 高级选项：支持基于时间（TOTP）与基于计数器（HOTP）两种类型，周期 15、30、60 秒，6 位或 8 位，SHA1、SHA256、SHA512 算法。
-- 整理方便：支持搜索、长按拖动排序、左滑编辑与删除，以及批量删除与导出。
-- 深浅色模式跟随系统。
-- 不申请任何敏感权限，无广告、无埋点；验证码在本机离线生成，不需要联网。
+- 离线取码：验证码在本机生成，无需联网。大字号显示，圆环提示剩余时间，临近过期时变色提醒。
+- 添加账号：扫描服务提供的二维码、识别相册中的二维码图片，或手动输入设置密钥。
+- 批量迁移：识别 Google 身份验证器导出的迁移二维码，一次导入其中的多个账号，重复账号自动跳过。
+- 加密备份：选择账号并设置密码，导出 AES-256 加密的备份文件。换机后选择备份文件、输入密码即可恢复，重复账号自动跳过。
+- 可选云同步：通过华为云空间，在登录同一华为账号的 HarmonyOS 设备间同步账号与密钥。需同时开启应用内与系统云空间中的 Rotor 同步开关。
+- 账号整理：支持按名称和描述搜索、长按拖动排序、左滑编辑与删除，以及批量删除和导出。
+- 系统适配：采用 HarmonyOS 原生界面，深浅色模式跟随系统。
+
+支持 TOTP（基于时间）与 HOTP（基于计数器）两种动态口令，适用于支持这两种标准的两步验证服务（2FA）。可设置 15、30、60 秒周期，6 位或 8 位验证码，以及 SHA1、SHA256、SHA512 算法，具体参数应与所使用的服务一致。
 ```
-
----
-
-## 权限说明
-
-Rotor 严格遵循「最小权限原则」，全应用申请 **2 项** 系统权限，均由系统自动授予、不弹窗，另声明 **1 项** 不向用户申请授权的系统备份扩展能力。
-
-**申请的系统权限**
-
-| 权限名 | 权限类型 | 申请时机 | 用途 |
-| --- | --- | --- | --- |
-| `ohos.permission.GET_NETWORK_INFO`（获取网络信息） | 普通权限 · 系统授予（`system_grant`） | 安装时由系统自动授予，不弹窗 | 开启云同步后监听默认网络的连接状态，在云同步页显示与云的连接状态，网络恢复时自动补同步；应用不直接访问网络 |
-| `ohos.permission.VIBRATE`（振动） | 普通权限 · 系统授予（`system_grant`） | 安装时由系统自动授予，不弹窗 | 长按卡片拖拽排序时，调用系统 Sensor Service Kit 播放一次与系统组件一致的长按触感振动 |
-
-**系统备份扩展能力（ExtensionAbility · 不向用户申请权限）**
-
-| 能力名 | 类型 | 导出 | 用途 |
-| --- | --- | --- | --- |
-| `EntryBackupAbility` | `BackupExtensionAbility`（`@kit.CoreFileKit`） | `exported: false`，仅系统可调用 | 参与 HarmonyOS 系统级"换机克隆 / 整机备份恢复"流程；由 `backup_config.json` 控制（当前 `allowToBackupRestore: true`）。账号与密钥（应用沙箱内 SQLite）随系统通道迁移 |
-
-**未申请的能力（明确不需要）**
-
-- 相机（`CAMERA`）：扫码使用 Scan Kit 默认界面扫码，相机由系统预授权，应用不申请
-- 网络访问（`INTERNET`）：应用自身不联网；开启云同步后由系统云空间服务在登录同一华为账号的设备间同步，不连接任何第三方服务器
-- 存储（`READ_MEDIA` / `WRITE_MEDIA`）：备份导入导出走系统文件选择器（CoreFileKit Picker），无需常驻存储权限
-- 位置、麦克风、通讯录、日历、通知等所有其他敏感权限均不申请
-
-**数据存储边界**
-
-- 账号与密钥（名称、备注、算法参数、base32 密钥）→ 应用内 **关系型数据库（ArkData / SQLite，安全等级 S3）**，位于应用沙箱，其他应用不可读
-- 开启云同步后 → 用户本人的 **华为云空间**（端云同步容器 `rotor`），`secret`、`name`、`note` 为云侧加密字段；用户可在系统「设置 - 云空间」中管理或删除
-- 加密备份文件（`.rotorbak`）→ 由用户在系统文件选择器中选定的位置，由用户自行管理
-
----
 
 ## 宣传图
 
-| #   | 主题       | 文案                       | 截图                                          |
-| --- | ---------- | -------------------------- | --------------------------------------------- |
-| 1   | 品牌欢迎   | 两步验证动态码，扫码即可添加 | [01_hero.png](assets/01_hero.png)             |
-| 2   | 列表与倒计时 | 动态验证码，一目了然        | [02_list.png](assets/02_list.png)             |
-| 3   | 扫码与迁移 | 扫码添加，批量迁移          | [03_scan.png](assets/03_scan.png)             |
-| 4   | 加密备份   | 加密备份，换机恢复          | [04_backup.png](assets/04_backup.png)         |
-| 5   | 多设备同步 | 多设备，同一套验证码        | [05_privacy.png](assets/05_privacy.png)       |
+素材位于 [assets/store-v2](assets/store-v2/)，按下表顺序展示。
 
-### 预览
+| 顺序 | 主题 | 主标题 | PNG 成图 | SVG 源文件 |
+| --- | --- | --- | --- | --- |
+| 1 | 离线取码 | 两步验证，离线也能取码。 | [01-hero.png](assets/store-v2/01-hero.png) | [01-hero.svg](assets/store-v2/01-hero.svg) |
+| 2 | 验证码列表 | 验证码，点一下就复制。 | [02-codes.png](assets/store-v2/02-codes.png) | [02-codes.svg](assets/store-v2/02-codes.svg) |
+| 3 | 扫码与迁移 | 扫码添加，批量迁移。 | [03-scan.png](assets/store-v2/03-scan.png) | [03-scan.svg](assets/store-v2/03-scan.svg) |
+| 4 | 加密备份 | 加密备份，换机可恢复。 | [04-backup.png](assets/store-v2/04-backup.png) | [04-backup.svg](assets/store-v2/04-backup.svg) |
+| 5 | 可选云同步 | 你的账号，多设备同步。 | [05-sync.png](assets/store-v2/05-sync.png) | [05-sync.svg](assets/store-v2/05-sync.svg) |
 
-![品牌欢迎](assets/01_hero.png)
-![列表与倒计时](assets/02_list.png)
-![扫码与迁移](assets/03_scan.png)
-![加密备份](assets/04_backup.png)
-![多设备同步](assets/05_privacy.png)
+![Rotor 宣传图总览](assets/store-v2/overview.png)
 
----
+### 素材规格
 
-## 素材规格
+- 尺寸：`1080 x 1920 px`，比例为 `9:16`。
+- 成图：5 张 PNG，单张小于 `1 MiB`。
+- 源文件：5 张自包含 SVG，插画与品牌图标内嵌，无需加载外部图片。
+- 可编辑内容：标题、说明、验证码、卡片、按钮、倒计时环与二维码示意均为独立矢量元素。
+- 立体插画：使用内置 `image_gen` 生成，作为位图内嵌于 SVG；原图保存在 [artwork](assets/store-v2/artwork/)。
+- 字体：正文与标题使用 `HarmonyOS Sans SC`，验证码使用 `HarmonyOS Sans Condensed`；SVG 保留文本节点，编辑环境需安装对应字体。
+- 配色：品牌蓝 `#0A59F7`、浅蓝白背景、深蓝标题；应用界面示意使用浅灰背景与白色卡片。
+- 展示内容：界面示意按当前组件结构绘制，底部包含「搜索、添加、更多」悬浮栏。账号、验证码与二维码均为示例，素材属于功能宣传图。
 
-- **尺寸**：1080 × 1920 px（9:16，按上架要求 3x 物理像素直接交付）
-- **格式**：PNG（8-bit RGB / RGBA，非交错）
-- **大小**：5 张图均 < 300 KB，符合 PNG/JPG/JPEG ≤ 5 MB 限制
-- **字体**：PingFang SC / Hiragino Sans GB / Heiti SC（系统兜底）
-- **配色**：与应用同色板（accent #0A59F7、bg #F1F3F5、text #0F1B2D）
+### 编辑与导出
 
-## 文件清单
-
-```
-assets/
-├── 01_hero.svg     01_hero.png      品牌欢迎页
-├── 02_list.svg     02_list.png      首页 OTP 列表 + 圆环倒计时
-├── 03_scan.svg     03_scan.png      扫码导入界面
-├── 04_backup.svg   04_backup.png    AES 加密备份
-└── 05_privacy.svg  05_privacy.png   多设备同步（深色品牌）
-```
-
-## 重新生成
-
-每张 PNG 由对应同名 SVG 通过 `rsvg-convert` 渲染。修改文案或样式后，在 `assets/` 目录下执行：
+修改 [build.mjs](assets/store-v2/build.mjs) 中的文案或排版后，在项目根目录执行：
 
 ```bash
-for f in assets/*.svg; do
-  rsvg-convert -w 1080 -h 1920 "$f" -o "${f%.svg}.png"
-done
+node assets/store-v2/build.mjs
 ```
 
-如需 JPEG / WEBP 版本（WEBP 单文件需 < 200 KB）：
+脚本使用 `rsvg-convert` 导出 PNG，使用 ImageMagick 生成总览图；运行环境需有 Node.js、librsvg、ImageMagick 与上述字体。输入为 `artwork/` 中的插画和应用内品牌图标，输出为同目录的 5 组 SVG、PNG 及 `overview.png`。
+
+直接编辑 SVG 后，可单独导出对应 PNG：
 
 ```bash
-# JPEG（高质量）
-magick assets/01_hero.png -quality 92 assets/01_hero.jpg
-# WEBP（压缩到 200 KB 以内）
-magick assets/01_hero.png -define webp:target-size=200000 assets/01_hero.webp
+rsvg-convert -w 1080 -h 1920 assets/store-v2/01-hero.svg -o assets/store-v2/01-hero.png
 ```
+
+生成脚本以脚本中的文案和排版为准。全部插画的提示词见 [PROMPTS.md](assets/store-v2/PROMPTS.md)。
+
+## 权限与数据说明
+
+### 系统权限
+
+应用声明 2 项系统权限，均为系统授予类型。
+
+| 权限 | 用途 |
+| --- | --- |
+| `ohos.permission.GET_NETWORK_INFO` | 开启云同步后监听网络状态，显示同步连接状态，网络恢复后触发同步。 |
+| `ohos.permission.VIBRATE` | 长按拖动账号卡片时播放触感反馈。 |
+
+扫码使用 Scan Kit 默认界面，备份导入导出使用系统文件选择器。应用未声明 `CAMERA`、`INTERNET`、`READ_MEDIA`、`WRITE_MEDIA` 权限。
+
+### 存储与同步
+
+- 本机存储：账号名称、描述、密钥和算法参数位于应用沙箱内的关系型数据库 `rotor.db`，安全等级为 `S3`。
+- 云同步：开启后经华为云空间同步，`secret`、`name`、`note` 为云侧加密字段。关闭同步后，本机数据保留，已同步的云端数据可在系统云空间中管理或删除。
+- 文件备份：`.rotorbak` 文件采用密码加密，保存到用户通过系统文件选择器指定的位置。
+- 系统备份：`EntryBackupAbility` 为非导出的备份扩展，`allowToBackupRestore` 为 `true`，应用数据可随系统备份恢复或换机通道迁移。
