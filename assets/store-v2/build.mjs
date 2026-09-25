@@ -12,8 +12,12 @@ const font = 'HarmonyOS Sans SC, PingFang SC, Noto Sans CJK SC, sans-serif';
 const numFont = 'HarmonyOS Sans Condensed, DIN Condensed, Arial Narrow, sans-serif';
 const png = (file) => 'data:image/png;base64,' + readFileSync(file).toString('base64');
 const logo = png(join(repo, 'entry/src/main/resources/base/media/appicon.png'));
-const google = png(join(repo, 'entry/src/main/resources/base/media/issuer_google.png'));
-const discord = png(join(repo, 'entry/src/main/resources/base/media/issuer_discord.png'));
+const issuerIcon = (key) => 'data:image/png;base64,' + execFileSync('magick', [
+  join(repo, 'entry/src/main/resources/base/media/issuer_' + key + '.webp'), 'png:-'
+]).toString('base64');
+const google = issuerIcon('google');
+const discord = issuerIcon('discord');
+const aliyun = issuerIcon('alibaba_cloud');
 const esc = (s) => String(s).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('"', '&quot;');
 const text = (x, y, value, size = 32, weight = 400, color = ink, extra = '') =>
   '<text x="' + x + '" y="' + y + '" font-size="' + size + '" font-weight="' + weight + '" fill="' + color + '" ' + extra + '>' + esc(value) + '</text>';
@@ -87,6 +91,7 @@ function art(file, y = 570, h = 1080) {
 function avatar(x, y, name, size = 42) {
   if (name === 'Google') return img(google, x, y, size, size);
   if (name === 'Discord') return img(discord, x, y, size, size);
+  if (name === 'Aliyun') return img(aliyun, x, y, size, size);
   return '<circle cx="' + (x + size / 2) + '" cy="' + (y + size / 2) + '" r="' + size / 2 + '" fill="#6350F6"/>' +
     text(x + size / 2, y + size * 0.74, name[0], size * 0.58, 500, '#FFFFFF', 'text-anchor="middle"');
 }
@@ -141,7 +146,7 @@ const toolbar = '<g filter="url(#softShadow)">' + rect(244, 1547, 592, 111, 56, 
   ).join('') + '</g>';
 
 createSvg('02-codes', '验证码，点一下就复制',
-  header(2, '验证码，', '点一下就复制。', '大字号显示，圆环提示剩余时间。', '支持搜索、拖动排序与左滑编辑。', 94) +
+  header(2, '验证码，', '点一下就复制。', '自动识别服务图标，也可自选图标。', '大字号显示，圆环提示剩余时间。', 94) +
   group('app-interface-demo',
     '<g filter="url(#shadow)">' + rect(106, 621, 868, 1081, 58, '#F1F3F5', 'stroke="#FFFFFF" stroke-width="3"') + '</g>' +
     text(156, 724, 'Rotor', 66, 700, '#121619') +
