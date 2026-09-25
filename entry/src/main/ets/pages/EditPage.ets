@@ -220,7 +220,8 @@ export struct EditPage {
               })
             Button($r('app.string.icon_change'))
               .buttonStyle(ButtonStyleMode.TEXTUAL)
-              .controlSize(ControlSize.SMALL)
+              .controlSize(ControlSize.NORMAL)
+              .responseRegion({ x: 0, y: -4, width: '100%', height: 48 })
               .onClick(() => {
                 this.iconSheetOpen = true;
               })

@@ -6,6 +6,8 @@ import { ICON_IMG, ICON_LIB, ICON_URL, searchIcons } from '../utils/IssuerIcon';
 import { IssuerIconEntry } from '../utils/IssuerIconData';
 
 const ROW_HEIGHT = 56;
+// 按钮高 40vp，点击热区上下各扩 4vp，达到 48vp
+const HOT_ZONE: Rectangle = { x: 0, y: -4, width: '100%', height: 48 };
 
 class IconSource implements IDataSource {
   private items: IssuerIconEntry[] = [];
@@ -44,7 +46,8 @@ class IconSource implements IDataSource {
   }
 }
 
-// 半模态内的图标选择：搜索内置图标，恢复自动识别，从图库导入或按链接下载，结果以 iconKey 回传
+// 半模态内的图标选择：搜索内置图标，恢复自动识别，从图库导入或按链接下载，结果以 iconKey 回传；
+// 搜索框有内容时收起上方入口，把空间留给结果
 @Component
 export struct IconPicker {
   @Prop current: string = '';
@@ -132,6 +135,90 @@ export struct IconPicker {
       .margin({ left: 16, right: 16 })
   }
 
+  @Builder Mark(on: boolean) {
+    if (on) {
+      SymbolGlyph($r('sys.symbol.checkmark'))
+        .fontSize(20)
+        .fontColor([$r('sys.color.icon_emphasize')])
+    }
+  }
+
+  @Builder Actions() {
+    Column() {
+      Row() {
+        Text($r('app.string.icon_auto'))
+          .fontSize($r('sys.float.Body_L'))
+          .fontColor($r('sys.color.font_primary'))
+          .layoutWeight(1)
+        this.Mark(this.current.length === 0)
+      }
+      .width('100%')
+      .height(ROW_HEIGHT)
+      .padding({ left: 16, right: 16 })
+      .onClick(() => {
+        this.onPick('');
+      })
+
+      this.RowDivider()
+
+      Row() {
+        Text($r('app.string.icon_from_photo'))
+          .fontSize($r('sys.float.Body_L'))
+          .fontColor($r('sys.color.font_primary'))
+          .layoutWeight(1)
+        if (this.current.startsWith(ICON_IMG)) {
+          this.Mark(true)
+        } else {
+          SymbolGlyph($r('sys.symbol.chevron_right'))
+            .fontSize(20)
+            .fontColor([$r('sys.color.icon_secondary')])
+        }
+      }
+      .width('100%')
+      .height(ROW_HEIGHT)
+      .padding({ left: 16, right: 16 })
+      .enabled(!this.busy)
+      .onClick(() => {
+        this.pickPhoto();
+      })
+
+      this.RowDivider()
+
+      Row({ space: 8 }) {
+        TextInput({ text: this.url, placeholder: $r('app.string.icon_url_hint') })
+          .type(InputType.URL)
+          .fontSize($r('sys.float.Body_L'))
+          .backgroundColor(Color.Transparent)
+          .padding({ left: 0, right: 0 })
+          .height(40)
+          .layoutWeight(1)
+          .onChange((v: string) => {
+            this.url = v;
+          })
+        if (this.busy) {
+          LoadingProgress()
+            .width(40)
+            .height(40)
+        } else {
+          Button($r('app.string.icon_download'))
+            .buttonStyle(ButtonStyleMode.NORMAL)
+            .controlSize(ControlSize.NORMAL)
+            .responseRegion(HOT_ZONE)
+            .enabled(this.url.trim().length > 0)
+            .onClick(() => {
+              this.download();
+            })
+        }
+      }
+      .width('100%')
+      .height(ROW_HEIGHT)
+      .padding({ left: 16, right: 8 })
+    }
+    .width('100%')
+    .backgroundColor($r('sys.color.comp_background_list_card'))
+    .borderRadius($r('sys.float.corner_radius_level8'))
+  }
+
   build() {
     Column({ space: 12 }) {
       Search({ value: this.query, placeholder: $r('app.string.icon_search_hint') })
@@ -139,84 +226,9 @@ export struct IconPicker {
           this.search(v);
         })
 
-      Column() {
-        Row() {
-          Text($r('app.string.icon_auto'))
-            .fontSize($r('sys.float.Body_L'))
-            .fontColor($r('sys.color.font_primary'))
-            .layoutWeight(1)
-          if (this.current.length === 0) {
-            SymbolGlyph($r('sys.symbol.checkmark'))
-              .fontSize(20)
-              .fontColor([$r('sys.color.icon_emphasize')])
-          }
-        }
-        .width('100%')
-        .height(ROW_HEIGHT)
-        .padding({ left: 16, right: 16 })
-        .onClick(() => {
-          this.onPick('');
-        })
-
-        this.RowDivider()
-
-        Row() {
-          Text($r('app.string.icon_from_photo'))
-            .fontSize($r('sys.float.Body_L'))
-            .fontColor($r('sys.color.font_primary'))
-            .layoutWeight(1)
-          if (this.current.startsWith(ICON_IMG)) {
-            SymbolGlyph($r('sys.symbol.checkmark'))
-              .fontSize(20)
-              .fontColor([$r('sys.color.icon_emphasize')])
-          } else {
-            SymbolGlyph($r('sys.symbol.chevron_right'))
-              .fontSize(20)
-              .fontColor([$r('sys.color.icon_secondary')])
-          }
-        }
-        .width('100%')
-        .height(ROW_HEIGHT)
-        .padding({ left: 16, right: 16 })
-        .enabled(!this.busy)
-        .onClick(() => {
-          this.pickPhoto();
-        })
-
-        this.RowDivider()
-
-        Row({ space: 8 }) {
-          TextInput({ text: this.url, placeholder: $r('app.string.icon_url_hint') })
-            .type(InputType.URL)
-            .fontSize($r('sys.float.Body_L'))
-            .backgroundColor(Color.Transparent)
-            .padding({ left: 0, right: 0 })
-            .height(40)
-            .layoutWeight(1)
-            .onChange((v: string) => {
-              this.url = v;
-            })
-          if (this.busy) {
-            LoadingProgress()
-              .width(24)
-              .height(24)
-          } else {
-            Button($r('app.string.icon_download'))
-              .buttonStyle(ButtonStyleMode.TEXTUAL)
-              .controlSize(ControlSize.SMALL)
-              .enabled(this.url.trim().length > 0)
-              .onClick(() => {
-                this.download();
-              })
-          }
-        }
-        .width('100%')
-        .height(ROW_HEIGHT)
-        .padding({ left: 16, right: 8 })
+      if (this.query.trim().length === 0) {
+        this.Actions()
       }
-      .width('100%')
-      .backgroundColor($r('sys.color.comp_background_list_card'))
-      .borderRadius($r('sys.float.corner_radius_level8'))
 
       if (this.resultCount === 0) {
         Text($r('app.string.icon_no_result'))
