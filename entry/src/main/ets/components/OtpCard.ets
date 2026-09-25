@@ -54,7 +54,8 @@ export struct OtpCard {
           if (this.account.type === OtpType.HOTP) {
             Button($r('app.string.btn_refresh'))
               .buttonStyle(ButtonStyleMode.NORMAL)
-              .controlSize(ControlSize.SMALL)
+              .controlSize(ControlSize.NORMAL)
+              .responseRegion({ x: 0, y: -4, width: '100%', height: 48 })
               .onClick(() => {
                 if (this.onRefresh) {
                   this.onRefresh();
