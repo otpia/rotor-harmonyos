@@ -15,10 +15,12 @@ const AVATAR_COLORS: Resource[] = [
   $r('sys.color.multi_color_11')
 ];
 
-// 不超过这个长度的关键词按整词匹配，避免 Rev 这类缩写配上 Revolution
+// 不超过这个长度的英文数字关键词按整词匹配，避免 Rev 这类缩写配上 Revolution
 const SHORT_WORD = 3;
 // 服务名作为整词出现在账号名称里也算命中，服务名至少要有这个长度
 const NAME_WORD_MIN = 4;
+// 名称里的邮箱多是登录账号，不代表服务，匹配前去掉
+const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+/g;
 
 // 名称到品牌图标的匹配结果，未命中存 null
 const matchCache: Map<string, Resource | null> = new Map();
@@ -27,6 +29,15 @@ const regexCache: Map<string, RegExp | null> = new Map();
 
 function isWordChar(c: string): boolean {
   return c.length > 0 && /[a-z0-9]/i.test(c);
+}
+
+// 中文等关键词与英文连写很常见，只有纯英文数字的关键词才按整词匹配
+function isAsciiWord(t: string): boolean {
+  return /^[a-z0-9]+$/i.test(t);
+}
+
+function isAsciiText(t: string): boolean {
+  return /^[\x20-\x7e]+$/.test(t);
 }
 
 function isWordAt(s: string, at: number, len: number): boolean {
@@ -73,7 +84,7 @@ function ruleHit(rule: IssuerRule, raw: string, lower: string): number {
   }
   const s = rule.ignoreCase ? lower : raw;
   const t = rule.text;
-  const short = t.length <= SHORT_WORD;
+  const short = t.length <= SHORT_WORD && isAsciiWord(t);
   if (rule.matcher === 0) {
     return (short ? containsWord(s, t) : s.includes(t)) ? t.length : 0;
   }
@@ -105,7 +116,8 @@ function findIcon(raw: string): Resource | null {
       }
     }
     for (const n of e.names) {
-      if (n.length >= NAME_WORD_MIN && n.length > bestLen && containsWord(lower, n)) {
+      if (n.length >= NAME_WORD_MIN && n.length > bestLen &&
+        (isAsciiText(n) ? containsWord(lower, n) : lower.includes(n))) {
         best = e.icon;
         bestLen = n.length;
       }
@@ -116,7 +128,7 @@ function findIcon(raw: string): Resource | null {
 
 // 按账号名称匹配内置品牌图标，深浅色版本由资源目录自动切换，未命中返回 undefined，由首字母头像兜底
 export function issuerImage(name: string): Resource | undefined {
-  const issuer = (name || '').trim();
+  const issuer = (name || '').replace(EMAIL, ' ').trim();
   if (issuer.length === 0) {
     return undefined;
   }
