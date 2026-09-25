@@ -31,7 +31,7 @@ export struct OtpCard {
     Column() {
       Column() {
         Row() {
-          IssuerAvatar({ name: this.account.name, diameter: 24 })
+          IssuerAvatar({ name: this.account.name, iconKey: this.account.iconKey, diameter: 24 })
           Text(this.account.name)
             .fontSize($r('sys.float.Body_L'))
             .fontWeight(FontWeight.Medium)

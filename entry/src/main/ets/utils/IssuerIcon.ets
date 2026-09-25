@@ -1,4 +1,9 @@
-import { ISSUER_ICONS, IssuerRule } from './IssuerIconData';
+import { ISSUER_ICONS, IssuerIconEntry, IssuerRule } from './IssuerIconData';
+
+// 账号 iconKey 的前缀：内置图标、按链接下载缓存的图标、从图库导入的图标；空串表示按名称自动识别
+export const ICON_LIB = 'lib:';
+export const ICON_URL = 'url:';
+export const ICON_IMG = 'img:';
 
 // 首字母头像背景色，取系统多彩色板，按名称哈希稳定选色
 const AVATAR_COLORS: Resource[] = [
@@ -26,6 +31,10 @@ const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+/g;
 const matchCache: Map<string, Resource | null> = new Map();
 // 正则规则的编译结果，编译失败存 null
 const regexCache: Map<string, RegExp | null> = new Map();
+// 资源键到图标的索引，首次使用时建立
+const keyIndex: Map<string, Resource> = new Map();
+// 每个图标用于搜索的小写文本：显示名、别名与包含类关键词
+const searchTexts: string[] = [];
 
 function isWordChar(c: string): boolean {
   return c.length > 0 && /[a-z0-9]/i.test(c);
@@ -138,6 +147,49 @@ export function issuerImage(name: string): Resource | undefined {
     matchCache.set(issuer, icon);
   }
   return icon !== null ? icon : undefined;
+}
+
+// 按资源键取内置图标，数据更新后键不存在时返回 undefined
+export function iconByKey(key: string): Resource | undefined {
+  if (keyIndex.size === 0) {
+    for (const e of ISSUER_ICONS) {
+      keyIndex.set(e.key, e.icon);
+    }
+  }
+  return keyIndex.get(key);
+}
+
+function searchText(i: number): string {
+  if (searchTexts.length === 0) {
+    for (const e of ISSUER_ICONS) {
+      const parts: string[] = [e.title.toLowerCase()];
+      for (const n of e.names) {
+        parts.push(n);
+      }
+      for (const r of e.rules) {
+        if (r.matcher === 0) {
+          parts.push(r.text.toLowerCase());
+        }
+      }
+      searchTexts.push(parts.join('\n'));
+    }
+  }
+  return searchTexts[i];
+}
+
+// 图标选择器的搜索：显示名、别名或关键词包含查询词即列出，查询为空时列出全部
+export function searchIcons(query: string): IssuerIconEntry[] {
+  const q = query.trim().toLowerCase();
+  if (q.length === 0) {
+    return ISSUER_ICONS;
+  }
+  const out: IssuerIconEntry[] = [];
+  for (let i = 0; i < ISSUER_ICONS.length; i++) {
+    if (searchText(i).includes(q)) {
+      out.push(ISSUER_ICONS[i]);
+    }
+  }
+  return out;
 }
 
 export function avatarInitial(name: string): string {

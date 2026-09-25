@@ -7,6 +7,7 @@ import { OtpAccountStore } from '../services/OtpAccountStore';
 import { isValidBase32, base32Normalize } from '../utils/Base32';
 import { getString } from '../utils/I18n';
 import { IssuerAvatar } from '../components/IssuerAvatar';
+import { IconPicker } from '../components/IconPicker';
 
 export interface EditParams {
   id?: string;
@@ -28,6 +29,7 @@ export struct EditPage {
   @State secret: string = '';
   @State isEdit: boolean = false;
   @State advancedOpen: boolean = false;
+  @State iconSheetOpen: boolean = false;
   private scroller: Scroller = new Scroller();
 
   aboutToAppear(): void {
@@ -190,6 +192,16 @@ export struct EditPage {
     .alignItems(VerticalAlign.Center)
   }
 
+  @Builder IconSheet() {
+    IconPicker({
+      current: this.account.iconKey,
+      onPick: (iconKey: string) => {
+        this.account.iconKey = iconKey;
+        this.iconSheetOpen = false;
+      }
+    })
+  }
+
   @Builder RowDivider(indent: number) {
     Divider()
       .color($r('sys.color.comp_divider'))
@@ -201,8 +213,19 @@ export struct EditPage {
     HdsNavDestination() {
       Scroll(this.scroller) {
         Column({ space: 12 }) {
-          IssuerAvatar({ name: this.account.name, diameter: 72 })
-            .margin({ top: 12, bottom: 12 })
+          Column({ space: 4 }) {
+            IssuerAvatar({ name: this.account.name, iconKey: this.account.iconKey, diameter: 72 })
+              .onClick(() => {
+                this.iconSheetOpen = true;
+              })
+            Button($r('app.string.icon_change'))
+              .buttonStyle(ButtonStyleMode.TEXTUAL)
+              .controlSize(ControlSize.SMALL)
+              .onClick(() => {
+                this.iconSheetOpen = true;
+              })
+          }
+          .margin({ top: 12 })
 
           Column() {
             this.InputRow($r('app.string.label_name'), this.account.name, InputType.Normal, (v: string) => {
@@ -326,5 +349,12 @@ export struct EditPage {
     })
     .bindToScrollable([this.scroller])
     .ignoreLayoutSafeArea([LayoutSafeAreaType.SYSTEM], [LayoutSafeAreaEdge.TOP, LayoutSafeAreaEdge.BOTTOM])
+    .bindSheet($$this.iconSheetOpen, this.IconSheet(), {
+      systemMaterial: new uiMaterial.ImmersiveMaterial({ style: uiMaterial.ImmersiveStyle.ULTRA_THICK }),
+      detents: [SheetSize.LARGE],
+      title: { title: $r('app.string.icon_picker_title') },
+      showClose: true,
+      preferType: SheetType.BOTTOM
+    })
   }
 }

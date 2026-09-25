@@ -191,6 +191,10 @@ def write_ets(ref, entries):
         '}',
         '',
         'export interface IssuerIconEntry {',
+        '  // 资源键，手动选择时以 lib: 前缀存入账号的 iconKey',
+        '  key: string;',
+        '  // 服务显示名，用于图标选择器的展示与搜索',
+        '  title: string;',
         '  icon: Resource;',
         '  // 小写后与账号名称精确比较',
         '  names: string[];',
@@ -203,7 +207,8 @@ def write_ets(ref, entries):
         names = ', '.join(ts_str(n) for n in e['names'])
         rules = ', '.join(
             f'{{ matcher: {m}, text: {ts_str(t)}, ignoreCase: {"true" if ic else "false"} }}' for m, t, ic in e['rules'])
-        lines.append(f"  {{ icon: $r('app.media.{PREFIX}{e['key']}'), names: [{names}], rules: [{rules}] }},")
+        lines.append(f"  {{ key: {ts_str(e['key'])}, title: {ts_str(e['title'])}, icon: $r('app.media.{PREFIX}{e['key']}'), "
+                     f"names: [{names}], rules: [{rules}] }},")
     lines.append('];')
     with open(DATA_ETS, 'w', encoding='utf-8') as f:
         f.write('\n'.join(lines) + '\n')
@@ -236,7 +241,7 @@ def main():
         for kw in ALIASES.get(s['name'], []):
             found.add(s['name'])
             rules.append((0, kw.lower(), True))
-        entries.append({'key': key, 'names': names, 'rules': rules})
+        entries.append({'key': key, 'title': s['name'].strip(), 'names': names, 'rules': rules})
     for key, name, keywords in EXTRA:
         if key in used:
             raise SystemExit(f'补充服务的键与 2FAS 重复：{key}')
@@ -246,7 +251,9 @@ def main():
         if unreadable_on_dark(img):
             save_webp(plated(img), DARK_MEDIA, key)
             plate += 1
-        entries.append({'key': key, 'names': [name.lower()], 'rules': [(0, k.lower(), True) for k in keywords]})
+        entries.append({'key': key, 'title': name, 'names': [name.lower()], 'rules': [(0, k.lower(), True) for k in keywords]})
+    # 按显示名排序，选择器里按字母顺序浏览
+    entries.sort(key=lambda e: e['title'].casefold())
     write_ets(ref, entries)
     missing = sorted(set(ALIASES) - found)
     if missing:

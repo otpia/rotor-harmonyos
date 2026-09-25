@@ -79,19 +79,21 @@ rsvg-convert -w 1080 -h 1920 assets/store-v2/01-hero.svg -o assets/store-v2/01-h
 
 ### 系统权限
 
-应用声明 2 项系统权限，均为系统授予类型。
+应用声明 3 项系统权限，均为系统授予类型。
 
 | 权限 | 用途 |
 | --- | --- |
 | `ohos.permission.GET_NETWORK_INFO` | 开启云同步后监听网络状态，显示同步连接状态，网络恢复后触发同步。 |
+| `ohos.permission.INTERNET` | 按用户填写的链接下载自定义服务图标，下载后缓存在本机。 |
 | `ohos.permission.VIBRATE` | 长按拖动账号卡片时播放触感反馈。 |
 
-扫码使用 Scan Kit 默认界面，备份导入导出使用系统文件选择器。应用未声明 `CAMERA`、`INTERNET`、`READ_MEDIA`、`WRITE_MEDIA` 权限。
+扫码使用 Scan Kit 默认界面，备份导入导出使用系统文件选择器，从图库选择图标使用系统图库选择器。应用未声明 `CAMERA`、`READ_MEDIA`、`WRITE_MEDIA` 权限。
 
 ### 存储与同步
 
 - 本机存储：账号名称、描述、密钥和算法参数位于应用沙箱内的关系型数据库 `rotor.db`，安全等级为 `S3`。
 - 云同步：开启后经华为云空间同步，`secret`、`name`、`note` 为云侧加密字段。关闭同步后，本机数据保留，已同步的云端数据可在系统云空间中管理或删除。
+- 自定义图标：按链接下载或从图库选择的图标缩小后保存在应用沙箱的 `files/issuer_icons` 目录。开启云同步后，账号的图标选择随账号同步；链接图标在其他设备上重新下载，图库图标只保存在本机。
 - 文件备份：`.rotorbak` 文件采用密码加密，保存到用户通过系统文件选择器指定的位置。
 - 系统备份：`EntryBackupAbility` 为非导出的备份扩展，`allowToBackupRestore` 为 `true`，应用数据可随系统备份恢复或换机通道迁移。
 

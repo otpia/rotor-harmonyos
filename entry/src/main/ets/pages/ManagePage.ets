@@ -310,7 +310,7 @@ export struct ManagePage {
 
   @Builder AccountRow(a: OtpAccount) {
     Row() {
-      IssuerAvatar({ name: a.name, diameter: 40 })
+      IssuerAvatar({ name: a.name, iconKey: a.iconKey, diameter: 40 })
       Column() {
         Text(a.name)
           .fontSize($r('sys.float.Body_L'))

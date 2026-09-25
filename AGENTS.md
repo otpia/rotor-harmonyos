@@ -11,6 +11,8 @@
 - 颜色、字号、圆角、间距一律用系统资源 `$r('sys.color.*')`、`$r('sys.float.*')`，不自定义颜色 token，深浅色由系统资源自动适配
 - 界面图标用 `SymbolGlyph($r('sys.symbol.*'))`；issuer 品牌图标按原比例完整显示、不裁圆，未命中时用 `IssuerAvatar` 首字母头像
 - issuer 品牌图标取自 2FAS Auth 安卓仓库，`uv run scripts/gen_issuer_icons.py` 生成 `base/media`、`dark/media` 下的 `issuer_*.webp` 与 `utils/IssuerIconData.ets`，产物勿手改；深色版优先用 2FAS 自带的，没有且在深色背景上看不清的由脚本垫浅色圆底；2FAS 未收录的服务放 `scripts/issuer_extra/` 并登记在脚本的 `EXTRA`，中文等别名登记在 `ALIASES`
+- 账号 `iconKey` 记录手动选择的图标：空串按名称自动识别，`lib:<资源键>` 为内置图标，`url:<链接>` 为按链接下载的图标（缓存在 `files/issuer_icons`，其他设备同步到后自行下载），`img:<文件名>` 为从图库导入的图标（只在本机，其他设备回退到自动识别）；编辑页点头像或「更换图标」打开 `IconPicker` 半模态
+- `ohos.permission.INTERNET` 只用于按链接下载自定义图标
 - 页面结构：`Index` 为 `HdsNavigation` 根，二级页为 `HdsNavDestination`，通过 `NavPathStack` 路由；首页标题栏只放大标题，操作全部收在 `HdsTabs` 悬浮栏（智感握姿跟手）一个胶囊里：「搜索」「添加」「更多」。点「搜索」时悬浮栏 `applyHideAnimation` 收起，底部原位以弹簧过渡（`curves.interpolatingSpring(0, 1, 200, 17)` 进、`170, 17` 出）弹出同形态的白色胶囊搜索框加「取消」，取消后 `applyShowAnimation` 恢复；不用 HdsTabs 迷你栏（它天生是挂在页签栏旁边的独立小圆，做不成一体）
 - 多选编辑页底部操作栏同样用 `HdsTabs` 悬浮胶囊（删除、导出、全选），不用 `toolbarConfiguration` 与 `ToolBar`；页签构建器里的置灰状态直接读 `this.selectedCount()`，@Builder 按值传入的参数没有响应性
 - 首页列表项用原生 `ListItem` 加 `swipeAction`（自绘 HDS 样式圆形按钮），不用 `HdsListItem`，否则 `ForEach.onMove` 长按拖拽排序失效
@@ -66,5 +68,7 @@
 - `services/OtpAccountStore.ets`：账号表、结构版本迁移
 - `services/CloudSyncService.ets`：端云同步、网络监听、同步状态
 - `services/ScanService.ets`：扫码与 Google Authenticator 迁移导入
-- `utils/IssuerIcon.ets`：issuer 品牌图标匹配，先比服务名与别名是否完全相同，再取规则与整词出现的服务名中命中最长的
+- `utils/IssuerIcon.ets`：issuer 品牌图标匹配，名称中的邮箱不参与匹配，先比服务名与别名是否完全相同，再取规则与整词出现的服务名中命中最长的；另提供图标选择器的搜索
+- `services/IconCache.ets`：自定义图标的下载、图库导入、缩小与本地缓存
+- `components/IconPicker.ets`：图标选择半模态（搜索内置图标、自动识别、图库、链接）
 - `components/OtpCard.ets`、`IssuerAvatar.ets`、`ProgressRing.ets`、`PasswordSheet.ets`
